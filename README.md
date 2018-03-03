@@ -1,2 +1,3 @@
-# computer-organization
-:computer: College studies on Computer Organization and Architecture, including assignments in Assembly MIPS and C
+<h1 align="center">SSC0112 - Computer Organization</h1>
+===
+College studies on SSC0112 - Computer Organization @ ICMC - University of São Paulo.
