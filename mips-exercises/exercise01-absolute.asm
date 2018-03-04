@@ -10,11 +10,13 @@
 .text
 main:
 bgez $t0, Positive # Jump to Positive if >= 0
+
 # Negative
-$t1, -1 * $t0
-b End
+sub  $t1, $zero, $t0
+j End
+
 # Positive
 Positive:
-$t1, $t0
+add $t1, $t0 + $zero # probably could use load word
+
 End:
-# Print value in $t1
