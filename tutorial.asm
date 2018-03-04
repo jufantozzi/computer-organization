@@ -17,6 +17,10 @@ sub $t0, $t1, $t2 # t0 <- t1 - t2
 mul $t0, $t1, $t2 # t0 <- t1 * t2
 # div $t0, $t1, $t2 # t0 <- t1 / t2
 
+# Encerrar execução do programa
+li $v0, 10
+syscall
+
 .data # dados vão embaixo de .data, variáveis, labels, words
 #  0x10010000 - Primeiro endereço
 cake: .ascii "the cake is a lie" # string
