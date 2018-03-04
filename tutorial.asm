@@ -15,7 +15,7 @@ li $v0, 10 # valores armazenados em hex (10 = A)
 add $t0, $t1, $t2 # t0 <- t1 + t2
 sub $t0, $t1, $t2 # t0 <- t1 - t2
 mul $t0, $t1, $t2 # t0 <- t1 * t2
-div $t0, $t1, $t2 # t0 <- t1 / t2
+# div $t0, $t1, $t2 # t0 <- t1 / t2
 
 .data # dados vão embaixo de .data, variáveis, labels, words
 #  0x10010000 - Primeiro endereço
