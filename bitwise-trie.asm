@@ -12,11 +12,19 @@
 # http://students.cs.tamu.edu/tanzir/csce350/reference/syscalls.html
 # https://en.m.wikipedia.org/wiki/Trie
 
-.data
+###### TODO ######
+# Coloquem dúvidas e coisas a fazer aqui
+# [] Usar .align
+# [] Alinhar e identar textos
+
+#.data
 
     ### data structures ###
     # node:
     # trie:
+
+    # Exemplo array:
+    # list: .word 3, 0, 1, 2, 6, -2, 4, 7, 3, 7
 
     #### strings ####
     # Visualizing the trie
