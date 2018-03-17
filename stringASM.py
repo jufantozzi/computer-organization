@@ -1,3 +1,4 @@
+"""Converts text into a single string for use in Assembly code."""
 import sys
 
 if (len(sys.argv) < 2):
@@ -5,7 +6,10 @@ if (len(sys.argv) < 2):
     exit()
 
 file = open(sys.argv[1], "r")
-file.read()
-for char in file:
-    print(char)
-    pass
+out = open("converted_string.txt", "w")
+text = file.read()
+for char in text:
+    if (char == '\n'):
+        out.write('\\n')
+    else:
+        out.write(char)
