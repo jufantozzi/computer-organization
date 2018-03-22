@@ -8,4 +8,4 @@
 ---
 
 # Assignment 1
-* [Red-black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree) implemented in Assembly MIPS
+* [Bitwise Trie](http://www.mathcs.emory.edu/~cheung/Courses/323/Syllabus/Text/trie01.html) implemented in Assembly MIPS
