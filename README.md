@@ -9,5 +9,3 @@
 
 # Assignment 1
 * [Red-black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree) implemented in Assembly MIPS
-
-<img src="https://media.giphy.com/media/RFAOwV5CuSfzq/giphy.gif"/>
