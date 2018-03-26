@@ -5,7 +5,7 @@
 #   Alunos:
 #       Felipe Scrochio Custódio - 9442688
 #       Gabriel Henrique Scalici - 9292970
-#       Juliano Fantozzi - ...
+#       Juliano Fantozzi - 9791218
 #       André Sorino - ...
 # 
 # Montado e executado utilizando MARS
