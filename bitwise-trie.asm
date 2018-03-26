@@ -7,7 +7,7 @@
 #		Gabriel Henrique Scalici - 9292970
 #		Juliano Fantozzi - 9791218
 #		André Luis Storino Junior - 9293668
-# 
+#
 # Montado e executado utilizando MARS
 #
 # USO DE REGISTRADORES
@@ -111,7 +111,7 @@
 	delete_node:
 		li $v0, 4 # imprimir string
 		la $a0, str_remove
-		
+
 		li $v0, 8 # ler string
 		la $a0, chave
 		li $a1, 64
@@ -145,24 +145,24 @@
 
 	# Funções auxiliares
 	check_input:
-	
+
 	# Percorrer string de entrada ($a0 = chave)
 	check_input_loop:
-		
+
 		# Verificar se bit atual é 0, 1 ou -1
 
 		# Imprimir mensagem de erro caso não seja
 
 		# Voltar para menu caso seja -1
-		
+
 		# beq "source", -1, menu
-		
+
 	check_input_error:
 		li $v0, -1
 
 	check_input_pass:
 		jr $ra # retornar
-		
+
 	exit:
 		li $v0, 4 # imprimir string
 		la $a0, str_exit
@@ -170,3 +170,5 @@
 
 		li $v0, 10 # finalizar execução
 		syscall
+
+# FIM DO PROGRAMA
