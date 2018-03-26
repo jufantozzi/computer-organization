@@ -16,7 +16,7 @@
 # ╠═════════════╬══════════════════════════╣
 # ║ $s0-$s4     ║ Opções do Menu           ║
 # ║ $t0         ║ Input do Menu            ║
-# ║ $s5         ║ Endereço inicial da Trie ║
+# ║ $s5         ║ Endereço inicial da Trie ║s
 # ║ $s6         ║ Contador (Trie)          ║
 # ║ $s7         ║ Contador (Pilha)         ║
 # ╚═════════════╩══════════════════════════╝
