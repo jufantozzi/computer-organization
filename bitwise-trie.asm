@@ -14,9 +14,9 @@
 # ╔═════════════╦══════════════════════════╗
 # ║ Registrador ║        Usado para        ║
 # ╠═════════════╬══════════════════════════╣
-# ║ $s0-$s4     ║ Opções do Menu           ║
+# ║ $s0-$s4     ║ Opções do Menu (1-5)     ║
 # ║ $t0         ║ Input do Menu            ║
-# ║ $s5         ║ Endereço inicial da Trie ║s
+# ║ $s5         ║ Endereço inicial da Trie ║
 # ║ $s6         ║ Contador (Trie)          ║
 # ║ $s7         ║ Contador (Pilha)         ║
 # ║ $a1         ║ Endereço de 'Chave'      ║
@@ -55,8 +55,11 @@
 	str_vis_info_nt: .asciiz "NT"
 	str_vis_null: .asciiz "null"
 
-	# Input
+	# String de input
 	chave: .space 64 # 16 dígitos = 64 bytes
+
+	# Nó da Trie
+	root: .space 8 # Cada nó possui dois ponteiros de 4 bytes (esq, dir)
 
 .text
 
@@ -91,7 +94,7 @@
 
 		# ir para opção escolhida
 		beq $t0, $s0, insert_node # 1
-		beq $t0, $s1, delete_node # 2
+		beq $t0, $s1, remove_node # 2
 		beq $t0, $s2, search_node # 3
 		beq $t0, $s3, print_trie # 4
 		beq $t0, $s4, exit # 5
@@ -104,31 +107,76 @@
 		syscall
 
 		li $v0, 8 # ler string
-		la $a0, chave # armazenar 'chave'
+		la $a0, chave # armazenar input do usuário em 'chave'
 		li $a1, 64 # preparar para ler 64 bytes
 		syscall
 
-		jal check_input
-		bne $v0, 1, insert_node
+		jal check_input # verificar se input é válido (volta ao menu se -1)
+		bne $v0, 1, insert_node # pede nova chave caso seja inválida
 
-		# checar se chave já existe
-		# search_node
-		# se busca retornar -1, continuar
-		# se busca retornar valor, sair
+		# verificar se chave já existe
+		# la $a0, chave
+		# jal search_node
+		# bne $v0, 1, insert_node # pede nova chave caso seja repetida
 
-		j menu
+		# acessar 'chave' do usuário
+		# $a1 é nosso ponteiro para iterar sobre a chave
+		la $a1, chave
 
-	delete_node:
+		# acessar nó raiz
+		# $a1 é nosso ponteiro para andar na Trie
+		la $t1, root
+
+		insert_node_loop:
+			# percorrer chave do usuário
+			lb $t0, 0($a1) # $a1 sempre estará atualizado
+			beq $t0, $zero, insert_node_left # 0 = inserir à esquerda
+			beq $t0, $s0, insert_node_right # 1 = inserir à direita
+			j insert_node # chegou ao fim da string, pede nova
+
+		insert_node_left:
+			# verificar se já existe (TODO)
+			beq 0($t1), $zero, insert_node_loop # verificar filho esquerdo (primeiro ponteiro do nó)
+
+			# se não existe, vamos alocar e inserir
+			li $v0, 9 # alocar memória
+			la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
+			syscall
+
+			move 0($t1), $v0 # novo nó é armazenado como filho esquerdo do nó atual
+			addi $a1, $a1, 4 # ir para próximo caractere na chave
+			move $t1, 0($t1) # acessar novo nó esquerdo
+
+			j insert_node_loop # retorna ao loop de inserção
+
+		insert_node_right:
+			# verificar se já existe (TODO)
+			beq 0($t1), 0, insert_node_loop # verificar filho esquerdo (primeiro ponteiro do nó)
+
+			# se não existe, vamos alocar e inserir
+			li $v0, 9 # alocar memória
+			la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
+			syscall
+
+			move 4($t1), $v0 # novo nó é armazenado como filho direito do nó atual
+			addi $a1, $a1, 4 # ir para próximo caractere na chave
+			# (TODO) armazenar na pilha antes?
+			move $t1, 4($t1) # acessar novo nó esquerdo
+
+			addi $a1, $a1, 4 # ir para próximo caractere na chave
+			j insert_node_loop # retorna ao loop de inserção
+
+	remove_node:
 		li $v0, 4 # imprimir string
 		la $a0, str_remove
 		syscall
 
 		li $v0, 8 # ler string
-		la $a0, chave
-		li $a1, 64
+		la $a0, chave # armazenar input do usuário em 'chave'
+		li $a1, 64 # preparar para ler 64 bytes (16 dígitos)
 		syscall
 
-		jal check_input
+		jal check_input # verificar que input é válido (volta ao menu se -1)
 
 		j menu
 
@@ -138,11 +186,11 @@
 		syscall
 
 		li $v0, 8 # ler string
-		la $a0, chave
-		li $a1, 64
+		la $a0, chave # armazenar input do usuário em 'chave'
+		li $a1, 64 # preparar para ler 64 bytes (16 dígitos)
 		syscall
 
-		jal check_input
+		jal check_input # verificar que input é válido (volta ao menu se -1)
 
 		j menu
 
@@ -153,7 +201,9 @@
 
 		j menu
 
-	# Funções auxiliares
+	# +--------------+
+	# | CHECAR INPUT |
+	# +--------------+
 	check_input:
 		# Percorrer string de entrada
 		li $t1, 48 # 0 em ASCII
