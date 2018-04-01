@@ -101,6 +101,10 @@
 		j menu # loop (opção inválida)
 
 	# Funcionalidades da Trie
+
+	# +----------+
+	# | INSERÇÃO |
+	# +----------+
 	insert_node:
 		li $v0, 4 # imprimir string
 		la $a0, str_insert
@@ -166,6 +170,10 @@
 			addi $a1, $a1, 4 # ir para próximo caractere na chave
 			j insert_node_loop # retorna ao loop de inserção
 
+
+	# +---------+
+	# | REMOÇÃO |
+	# +---------+
 	remove_node:
 		li $v0, 4 # imprimir string
 		la $a0, str_remove
@@ -180,6 +188,10 @@
 
 		j menu
 
+
+	# +-------+
+	# | BUSCA |
+	# +-------+
 	search_node:
 		li $v0, 4 # imprimir string
 		la $a0, str_search
@@ -192,14 +204,35 @@
 
 		jal check_input # verificar que input é válido (volta ao menu se -1)
 
+		# $a0 = endereço chave, iterar sobre a string
+		lb $t0, 0($a0) # carregar caractere
+		beq $t0, $zero, search_node_left # 0 - ir p/ esquerda
+		beq $t0, $s0, search_node_right # 1 - ir p/ direita
+		# não é 0 ou 1, acabou a string
+		# desempilhar e exibir caminho
+		# retornar
 		j menu
 
+		search_node_left:
+			# armazenar nó atual na pilha
+			# verificar próximo caractere da string
+			addi $a0, $a0, 4 # ir p/ endereço do próximo caractere
+			lb $t0, 0($a0)
+
+		search_node_right:
+
+
+
+	# +--------------+
+	# | VISUALIZAÇÃO |
+	# +--------------+
 	print_trie:
 		# li $v0, 4 # imprimir string
 		# la $a0, str_vis
 		# syscall
 
 		j menu
+
 
 	# +--------------+
 	# | CHECAR INPUT |
