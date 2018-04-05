@@ -77,9 +77,13 @@
 		li $v0, 9 # alocar memória
 		la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
 		syscall
+		# (TODO) apontar para null no inicio, logo que eh criado a raiz
 
 		# Armazenar endereço inicial da Trie
+		# (TODO) Armazenar endereço que está em $v0 em root (store word)
 		move $s5, $v0
+
+
 
 	# Funcionalidade do Menu
 	menu:
@@ -108,14 +112,13 @@
 
 		li $v0, 8 # ler string
 		la $a0, chave # armazenar input do usuário em 'chave'
-		li $a1, 64 # preparar para ler 64 bytes
+		li $a1, 16 # preparar para ler 16 bytes
 		syscall
 
 		jal check_input # verificar se input é válido (volta ao menu se -1)
 		bne $v0, 1, insert_node # pede nova chave caso seja inválida
 
-		# verificar se chave já existe
-		# la $a0, chave
+		# (TODO)verificar se chave já existe -> Colocar a busca
 		# jal search_node
 		# bne $v0, 1, insert_node # pede nova chave caso seja repetida
 
@@ -124,11 +127,13 @@
 		la $a1, chave
 
 		# acessar nó raiz
-		# $a1 é nosso ponteiro para andar na Trie
+		# $t1 = nó atual
 		la $t1, root
 
 		insert_node_loop:
 			# percorrer chave do usuário
+			# $t0 = caractere atual da chave
+			# $a1 = endereço do caractere atual da chave
 			lb $t0, 0($a1) # $a1 sempre estará atualizado
 			beq $t0, $zero, insert_node_left # 0 = inserir à esquerda
 			beq $t0, $s0, insert_node_right # 1 = inserir à direita
@@ -136,34 +141,45 @@
 
 		insert_node_left:
 			# verificar se já existe (TODO)
-			beq 0($t1), $zero, insert_node_loop # verificar filho esquerdo (primeiro ponteiro do nó)
+			# se não for null, continuar descendo
+			addi $a1, $a1, 1 # ir para próximo caractere na chave
+			j insert_node_loop
 
-			# se não existe, vamos alocar e inserir
+			# se for null, criar novo nó
+			# vamos alocar e inserir
 			li $v0, 9 # alocar memória
-			la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
-			syscall
+			li $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
+			syscall # $v0 contém endereço inicial do novo nó
+			# (TODO) coloca o valor null nos dois endereços alocados
+			# 0($v0) = null  4($v0) = null
 
+			# (TODO) move -> store word
 			move 0($t1), $v0 # novo nó é armazenado como filho esquerdo do nó atual
-			addi $a1, $a1, 4 # ir para próximo caractere na chave
+			addi $a1, $a1, 1 # ir para próximo caractere na chave
+			# (TODO) move -> store word ou load
 			move $t1, 0($t1) # acessar novo nó esquerdo
 
 			j insert_node_loop # retorna ao loop de inserção
 
 		insert_node_right:
 			# verificar se já existe (TODO)
-			beq 0($t1), 0, insert_node_loop # verificar filho esquerdo (primeiro ponteiro do nó)
+			# se não for null, continuar descendo
+			addi $a1, $a1, 1 # ir para próximo caractere na chave
+			j insert_node_loop
 
-			# se não existe, vamos alocar e inserir
+			# se for null, criar novo nó
+			# vamos alocar e inserir
 			li $v0, 9 # alocar memória
-			la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
-			syscall
+			li $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
+			syscall # $v0 contém endereço inicial do novo nó
+			# (TODO) coloca o valor null nos dois endereços alocados
+			# 0($v0) = null  4($v0) = null
 
+			# (TODO) move -> store word
 			move 4($t1), $v0 # novo nó é armazenado como filho direito do nó atual
-			addi $a1, $a1, 4 # ir para próximo caractere na chave
-			# (TODO) armazenar na pilha antes?
-			move $t1, 4($t1) # acessar novo nó esquerdo
-
-			addi $a1, $a1, 4 # ir para próximo caractere na chave
+			addi $a1, $a1, 1 # ir para próximo caractere na chave
+			# (TODO) move -> store word ou load
+			move $t1, 4($t1) # acessar novo nó direito
 			j insert_node_loop # retorna ao loop de inserção
 
 	remove_node:
@@ -194,6 +210,27 @@
 
 		j menu
 
+		search_node_left:
+			# armazenar nó atual na pilha (caminho)
+			# verificar próximo caractere da string
+			addi $a0, $a0, 4 # ir p/ endereço do próximo caractere
+			lb $t0, 0($a0)
+
+		search_node_right:
+			# armazenar nó atual na pilha (caminho)
+
+			# ok, esse nó existe?
+			# estamos em 0($a0), certo? logo, byte em 8($a0) nos dará sua existencia
+
+			# verificar próximo caractere da string
+			addi $a0, $a0, 4 # ir p/ endereço do próximo caractere
+			lb $t0, 0($a0)
+
+
+
+	# +--------------+
+	# | VISUALIZAÇÃO |
+	# +--------------+
 	print_trie:
 		# li $v0, 4 # imprimir string
 		# la $a0, str_vis
@@ -229,12 +266,12 @@
 			lb $t0, 0($a1) # carrega byte sem sinal
 			beq $t0, $zero, check_input_pass # verifica se é '\0', se chegou no final, sucesso
 
-			addi $a1, $a1, 4 # Andar para o próximo char checando novamente se é válido
+			addi $a1, $a1, 1 # Andar para o próximo char checando novamente se é válido
 			j check_input_loop
 
 		# voltar ao menu (-1)
 		check_input_return:
-			addi $a1, $a1, 4 # Andar para o próximo byte
+			addi $a1, $a1, 1 # Andar para o próximo byte
 			lb $t0, 0($a1) # Carregar byte
 			# bne $t0, $t2, check_input_error # Checa se é 1
 			# Exibir string de retorno
