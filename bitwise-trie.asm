@@ -70,7 +70,6 @@
 .text
 
 	main:
-
 		# Opções do Menu ficam armazenadas
 		# nos registradores $sX
 		li $s0, 1 # 1 - Inserção
@@ -113,117 +112,17 @@
 		j menu # loop (opção inválida)
 
 	# Funcionalidades da Trie
-
 	# +----------+
 	# | INSERÇÃO |
 	# +----------+
-
-	insert_node:
-		li $v0, 4 # imprimir string
-		la $a0, str_insert
-		syscall
-
-		li $v0, 8 # ler string
-		la $a0, chave # armazenar 'chave'
-		li $a1, 16 # preparar para ler 16 bytes
-		syscall
-    
-		# checar se chave é valida
-		jal check_input
-    
-		# tentando inserir novamente caso chave invalida
-		bne $v0, 1, insert_node
-    
-		# checar se chave já existe
-		jal search_node
-		bne $v0, -1, print_repeat_error
-    
-		# se busca retornar -1, continuar
-		j menu
-		print_repeat_error:
-			li $v0, 4
-			la, $a0, str_repeat
-			syscall
-			j insert_node
-
-	delete_node:
-		la $a0, chave # armazenar input do usuário em 'chave'
-		li $a1, 64 # preparar para ler 64 bytes
-		syscall
-
-		jal check_input # verificar se input é válido (volta ao menu se -1)
-		bne $v0, 1, insert_node # pede nova chave caso seja inválida
-
-		# verificar se chave já existe
-		# la $a0, chave
-		# jal search_node
-		# bne $v0, 1, insert_node # pede nova chave caso seja repetida
-
-		# acessar 'chave' do usuário
-		# $a1 é nosso ponteiro para iterar sobre a chave
-		la $a1, chave
-
-		# acessar nó raiz
-		# $a1 é nosso ponteiro para andar na Trie
-		la $t1, root
-
-		insert_node_loop:
-			# percorrer chave do usuário
-			lb $t0, 0($a1) # $a1 sempre estará atualizado
-			beq $t0, $zero, insert_node_left # 0 = inserir à esquerda
-			beq $t0, $s0, insert_node_right # 1 = inserir à direita
-			j insert_node # chegou ao fim da string, pede nova
-
-		insert_node_left:
-			# verificar se já existe (TODO)
-			beq 0($t1), $zero, insert_node_loop # verificar filho esquerdo (primeiro ponteiro do nó)
-
-			# se não existe, vamos alocar e inserir
-			li $v0, 9 # alocar memória
-			la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
-			syscall
-
-			move 0($t1), $v0 # novo nó é armazenado como filho esquerdo do nó atual
-			addi $a1, $a1, 4 # ir para próximo caractere na chave
-			move $t1, 0($t1) # acessar novo nó esquerdo
-
-			j insert_node_loop # retorna ao loop de inserção
-
-		insert_node_right:
-			# verificar se já existe (TODO)
-			beq 0($t1), 0, insert_node_loop # verificar filho esquerdo (primeiro ponteiro do nó)
-
-			# se não existe, vamos alocar e inserir
-			li $v0, 9 # alocar memória
-			la $a0, 8 # 1 nó = 8 bytes (2 endereços/ponteiros)
-			syscall
-
-			move 4($t1), $v0 # novo nó é armazenado como filho direito do nó atual
-			addi $a1, $a1, 4 # ir para próximo caractere na chave
-			# (TODO) armazenar na pilha antes?
-			move $t1, 4($t1) # acessar novo nó esquerdo
-
-			addi $a1, $a1, 4 # ir para próximo caractere na chave
-			j insert_node_loop # retorna ao loop de inserção
-
-
+	
 	# +---------+
 	# | REMOÇÃO |
 	# +---------+
-	remove_node:
-		li $v0, 4 # imprimir string
-		la $a0, str_remove
-		syscall
 
-		li $v0, 8 # ler string
-		la $a0, chave
-		li $a1, 16
-		syscall
-
-		jal check_input
-
-		j menu
-
+	# +-------+
+	# | BUSCA |
+	# +-------+
 	search_node:
 		# valores setados nos registradores durante o check_input
 		#t1 = '0'
@@ -272,39 +171,6 @@
 
 		j menu
 
-	# +-------+
-	# | BUSCA |
-	# +-------+
-	search_node:
-		li $v0, 4 # imprimir string
-		la $a0, str_search
-		syscall
-
-		li $v0, 8 # ler string
-		la $a0, chave # armazenar input do usuário em 'chave'
-		li $a1, 64 # preparar para ler 64 bytes (16 dígitos)
-		syscall
-
-		jal check_input # verificar que input é válido (volta ao menu se -1)
-
-		# $a0 = endereço chave, iterar sobre a string
-		lb $t0, 0($a0) # carregar caractere
-		beq $t0, $zero, search_node_left # 0 - ir p/ esquerda
-		beq $t0, $s0, search_node_right # 1 - ir p/ direita
-		# não é 0 ou 1, acabou a string
-		# desempilhar e exibir caminho
-		# retornar
-		j menu
-
-		search_node_left:
-			# armazenar nó atual na pilha
-			# verificar próximo caractere da string
-			addi $a0, $a0, 4 # ir p/ endereço do próximo caractere
-			lb $t0, 0($a0)
-
-		search_node_right:
-
-
 
 	# +--------------+
 	# | VISUALIZAÇÃO |
@@ -315,6 +181,7 @@
 		# syscall
 
 		j menu
+
 
 	# Funções auxiliares
 	# +--------------+
