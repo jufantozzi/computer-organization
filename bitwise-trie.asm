@@ -171,7 +171,7 @@
 			li $v0, 1 # return 1
 			jr $ra
 
-  # +--------------+
+        # +--------------+
 	# | VISUALIZAÇÃO |
 	# +--------------+
 	# Imprime a arvore em largura, com informacoes relevantes de cada noh
@@ -387,7 +387,7 @@
 
 	# Funções auxiliares
   
-  # +--------------+
+  	# +--------------+
 	# |    FILA      |
 	# +--------------+
 	#
@@ -456,7 +456,7 @@
 			li $v1, 0
 			j $ra
 	
-  # +--------------+
+  	# +--------------+
 	# | CHECAR INPUT |
 	# +--------------+
 	check_input:
