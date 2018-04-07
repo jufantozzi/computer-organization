@@ -14,7 +14,7 @@
 # ╔═════════════╦══════════════════════════╗
 # ║ Registrador ║        Usado para        ║
 # ╠═════════════╬══════════════════════════╣
-# ║ $s0-$s4     ║ Opções do Menu           ║
+# ║ $s0-$s4     ║ Opções do Menu (1-5)     ║
 # ║ $t0         ║ Input do Menu            ║
 # ║ $s5         ║ Endereço inicial da Trie ║
 # ║ $s6         ║ Contador (Trie)          ║
@@ -33,7 +33,9 @@
 #
 
 .data
+
 	.align 2
+  
 	# Strings de menu
 	str_menu: .asciiz "\n\nBITWISE TRIE\n\n    1. Inserção\n    2. Remoção\n    3. Busca\n    4. Visualização\n    5. Sair\n    Escolha uma opção (1 a 5): "
 
@@ -41,8 +43,10 @@
 	str_insert: .asciiz "Digite o binário para inserção: "
 	str_remove: .asciiz "Digite o binário para remoção: "
 	str_search: .asciiz "Digite o binário para busca: "
+
 	str_repeat: .asciiz "Binario já existente na arvore."
 	str_sucess: .asciiz "Sucesso!\n"
+
 	str_duplicated: .asciiz "Chave repetida. Inserção não permitida.\n"
 	str_invalid: .asciiz "Chave inválida. Insira somente números binários (ou -1 retorna ao menu)\n"
 	str_return: .asciiz "Retornando ao menu.\n"
@@ -65,10 +69,13 @@
 
 	# Input
 	chave: .space 16 # 16 dígitos = 16 bytes
+
+	# Raiz da Trie
+	root: .space 8 # Cada nó possui dois ponteiros de 4 bytes (esq, dir)
+
 .text
 
 	main:
-
 		# Opções do Menu ficam armazenadas
 		# nos registradores $sX
 		li $s0, 1 # 1 - Inserção
@@ -79,7 +86,7 @@
 		# Alocar nó raiz
 		li $v0, 9 # alocar memória
 		la $a0, 12 # 1 nó = 12 bytes (2 endereços/ponteiros + 1 flag indicando se o noh eh terminal)
-			   # a flag ocupa 4 bytes ao inves de 1 byte por causa do alinhamento
+		# a flag ocupa 4 bytes ao inves de 1 byte por causa do alinhamento
 		syscall
 		
 		# Colocando o valor null nos ponteiros do primeiro noh
@@ -87,12 +94,13 @@
 		sw $zero, 0($v0)
 		# endereco a direita = null
 		sw $zero, 4($v0)
+
 		# flag indicando se eh noh terminal = false
 		sw $zero, 8($v0)
+
 		# Armazenar endereço inicial da Trie
 		move $s5, $v0
 		
-
 	# Funcionalidade do Menu
 	menu:
 
@@ -106,51 +114,25 @@
 
 		# ir para opção escolhida
 		beq $t0, $s0, insert_node # 1
-		beq $t0, $s1, delete_node # 2
+		beq $t0, $s1, remove_node # 2
 		beq $t0, $s2, search_node # 3
 		beq $t0, $s3, visualize # 4
 		beq $t0, $s4, exit # 5
 		j menu # loop (opção inválida)
 
 	# Funcionalidades da Trie
-	insert_node:
-		li $v0, 4 # imprimir string
-		la $a0, str_insert
-		syscall
+ 
+	# +----------+
+	# | INSERÇÃO |
+	# +----------+
+	
+	# +---------+
+	# | REMOÇÃO |
+	# +---------+
 
-		li $v0, 8 # ler string
-		la $a0, chave # armazenar 'chave'
-		li $a1, 16 # preparar para ler 16 bytes
-		syscall
-		# checar se chave é valida
-		jal check_input
-		# tentando inserir novamente caso chave invalida
-		bne $v0, 1, insert_node
-		# checar se chave já existe
-		jal search_node
-		bne $v0, -1, print_repeat_error
-		# se busca retornar -1, continuar
-		j menu
-		print_repeat_error:
-			li $v0, 4
-			la, $a0, str_repeat
-			syscall
-			j insert_node
-
-	delete_node:
-		li $v0, 4 # imprimir string
-		la $a0, str_remove
-		syscall
-
-		li $v0, 8 # ler string
-		la $a0, chave
-		li $a1, 16
-		syscall
-
-		jal check_input
-
-		j menu
-
+	# +-------+
+	# | BUSCA |
+	# +-------+
 	search_node:
 		# valores setados nos registradores durante o check_input
 		#t1 = '0'
@@ -172,7 +154,6 @@
 			bnez $t0, increment_input_vector #caso haja um endereço, continue percorrendo o vetor
 			beqz $t0, node_not_found #caso nao haja endereço, retornar "input nao encontrado"
 		
-		
 		case_one:
 			lw $t0, 4($s5) #carrega endereço "1" da arvore
 			bnez $t0, increment_input_vector #caso haja um endereço, continue percorrendo o vetor
@@ -189,9 +170,11 @@
 		node_found:	
 			li $v0, 1 # return 1
 			jr $ra
-		j menu
 
-	#Imprime a arvore em largura, com informacoes relevantes de cada noh
+  # +--------------+
+	# | VISUALIZAÇÃO |
+	# +--------------+
+	# Imprime a arvore em largura, com informacoes relevantes de cada noh
 	visualize:
 		# Utilizacao das variaveis
 		# $t0 = endereco do no checado
@@ -401,8 +384,12 @@
 				syscall
 				j vis_check_left
 
+
 	# Funções auxiliares
-	# FILA	
+  
+  # +--------------+
+	# |    FILA      |
+	# +--------------+
 	#
 	# ESTRUTURA DE DADOS
 	# ╔══════════════════════╦══════════════╦═════════╗
@@ -469,6 +456,9 @@
 			li $v1, 0
 			j $ra
 	
+  # +--------------+
+	# | CHECAR INPUT |
+	# +--------------+
 	check_input:
 		# Percorrer string de entrada
 		li $t1, 48 # 0 em ASCII
@@ -494,7 +484,36 @@
 			# Ver se está na posição final da entrada
 			lb $t0, 1($a1) # carrega proximo byte da string
 			addi $a1, $a1, 1 # Andar para o próximo char
-			j check_input_loop #reinicia check_input_loop
+			j check_input_loop # reinicia check_input_loop
+
+		# voltar ao menu (-1)
+		# checando se o byte seguido do '-' equivale ao digito '1'
+		check_input_return1:
+			lb $t0 1($a1)
+			beq $t0, $t2, check_input_return2
+			j check_input_error
+			
+		# checando se a string acabou apos o "-1"
+		check_input_return2:
+			lb $t0 2($a1)
+			# checando se eh '\n'
+			beq $t0, $t4, check_input_return3
+			# checando se eh '\0'
+			beq $t0, $zero, check_input_return 3
+			j check_input_error
+			
+		check_input_return3:
+			# Exibir string de retorno
+			# Imprimir string
+			li $v0, 4 
+			la $a0, str_return
+			syscall
+
+			lb $t0, 0($a1) # carrega byte sem sinal
+			beq $t0, $zero, check_input_pass # verifica se é '\0', se chegou no final, sucesso
+
+			addi $a1, $a1, 4 # Andar para o próximo char checando novamente se é válido
+			j check_input_loop
 
 		# voltar ao menu (-1)
 		# checando se o byte seguido do '-' equivale ao digito '1'
@@ -537,7 +556,7 @@
 			
 			li $v0, 1 # 1 no retorno = sucesso
 			jr $ra
-			
+
 	exit:
 		li $v0, 4 # imprimir string
 		la $a0, str_exit
