@@ -398,11 +398,11 @@
 		beq $t3, $t7, remove_assign_null_right
 
 		remove_assign_null_left:
-			sw $zero, 0($v0)
-			j remove_end_remove
+		sw $zero, 0($v0)
+		j remove_end_remove
 
-			remove_assign_null_right:
-			sw $zero, 4($v0)
+		remove_assign_null_right:
+		sw $zero, 4($v0)
 
 	remove_end_remove:	# a remocao termina
 		move $sp, $s7 # voltando stack pointer na posicao inicial
