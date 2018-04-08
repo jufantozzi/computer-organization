@@ -147,6 +147,11 @@
     # +----------+
     # | INSERCAO |
     # +----------+
+    insert_node_repeat:
+    	li $v0, 4 # imprimir string
+        la $a0, str_duplicated
+        syscall
+
     insert_node:
         li $v0, 4 # imprimir string
         la $a0, str_insert
@@ -158,11 +163,11 @@
         syscall
 
         jal check_input # verificar se input eh valido (volta ao menu se -1)
-        bne $v0, 1, insert_node # pede nova chave caso seja invalida
+        beq $v0, -1, insert_node # pede nova chave caso seja invalida
 
         # verificar se chave ja existe
-        # jal search_node
-        # bne $v0, 1, insert_node # pede nova chave caso seja repetida
+        jal search_node
+        bne $v0, 1, insert_node_repeat # pede nova chave caso seja repetida
 
         # acessar 'chave' do usuario
         # $a1 eh nosso ponteiro para iterar sobre a chave
@@ -181,8 +186,8 @@
             # $t0 = caractere atual da chave
             # $a1 = endereco do caractere atual da chave
             lb $t0, 0($a1) # $ a1 sempre estara atualizado
-            beq $t0, $t3, insert_node_left # 0 = inserir à esquerda
-            beq $t0, $t4, insert_node_right # 1 = inserir à direita
+            beq $t0, $t3, insert_node_left # 0 = inserir a esquerda
+            beq $t0, $t4, insert_node_right # 1 = inserir a direita
 
             # fim da string significa que noh atual eh noh terminal de chave
             # sw $s0, 8($t1) # marcar flag como '1'
@@ -263,27 +268,28 @@
     # | BUSCA |
     # +-------+
     search_node:
-        # valores setados nos registradores durante o check_input
-        # t1 = '0'
-        # t2 = '1'
-        # t4 = '\n'
+        # carregar valores de comparacao
+        li $t1, 48 # 0 em ASCII
+        li $t2, 49 # 1 em ASCII
+        li $t4, 10 # \n em ASCII
+
         la $a1, chave # a1 = input
         move $a0, $s5 # a0 = root
         lb $t0, 0($a1) # carrega primeiro digito do input
 
         search_node_loop:
-            beq $t0, $t4, search_found # fim da leitura '\n'
-            beq $t0, $zero, search_found # fim da leitura '\0'
-            beq $t0, $t1, search_zero # caso byte == '0' goto search_zero
-            beq $t0, $t2, search_one # caso byte == '1' goto search_one
+            beq $t0, $t4, search_node_found # fim da leitura '\n'
+            beq $t0, $zero, search_node_found # fim da leitura '\0'
+            beq $t0, $t1, search_node_zero # caso byte == '0' goto search_node_zero
+            beq $t0, $t2, search_node_one # caso byte == '1' goto search_node_one
             j search_node_loop
 
-        search_zero:
+        search_node_zero:
             lw $t0, 0($s5) # carrega endereco "0" da arvore
             bnez $t0, search_next_char # caso haja um endereco, continue percorrendo o vetor
             beqz $t0, search_not_found # caso nao haja endereco, retornar "input nao encontrado"
 
-        search_one:
+        search_node_one:
             lw $t0, 4($s5) # carrega endereco "1" da arvore
             bnez $t0, search_next_char # caso haja um endereco, continue percorrendo o vetor
             beqz $t0, search_not_found # caso nao haja endereco, retornar "input nao encontrado
@@ -293,11 +299,11 @@
             lb $t0, 0($a1)
             j search_node_loop
 
-        search_not_found:
+        search_node_not_found:
             li $v0, -1 # return -1
             jr $ra
 
-        search_found:
+        search_node_found:
             li $v0, 1 # return 1
             jr $ra
 
@@ -318,7 +324,7 @@
         bne $v0, 1, remove_node # pede nova chave caso esteja incorreto
 
         jal search_node # verifica se a chave a ser deletada existe de fato
-        beq $v0, -1, remove_node # pede nova chave caso chave n�o exista
+        beq $v0, -1, remove_node # pede nova chave caso chave nao exista
 
         # setup para a recursao
         la $a1, chave # a1 = input
