@@ -299,8 +299,8 @@
     # | REMOCAO |
     # +---------+
     remove_node:
-        li $v0, 4 # imprimir string
-        la $a0, str_remove
+    	li $v0, 4 # imprimir string
+	la $a0, str_remove
         syscall
 
         li $v0, 8 # ler string
@@ -357,57 +357,57 @@
                 
             remove_return_recursion:
                 lw $t6, 0($v0) # $t6 = filho a esquerda do noh processado
-				lw $t7, 4($v0) # $t7 = filho a direita do noh processado
-				lb $t5, 8($v0) # load da flag para verificar se é noh terminal ou não
+		lw $t7, 4($v0) # $t7 = filho a direita do noh processado
+		lb $t5, 8($v0) # load da flag para verificar se é noh terminal ou não
 
-				# caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
-				bnez $t5, end_recursion	# eh noh terminal
-				add $t5, $t6, $t7	# $t5 = fesq + fdir
-				#se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
-				beq $t5, $t6, remove_node_next
-				beq $t5, $t7, remove_node_next
+		# caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
+		bnez $t5, end_recursion	# eh noh terminal
+		add $t5, $t6, $t7	# $t5 = fesq + fdir
+		#se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
+		beq $t5, $t6, remove_node_next
+		beq $t5, $t7, remove_node_next
 
-				end_recursion:
-					addi $sp, $sp, -8
-					j remove_assign_null
+		end_recursion:
+			addi $sp, $sp, -8
+			j remove_assign_null
 
             remove_node_next:
                 lw $ra, 4($sp) #pop da pilha
-				lw $v0, 8($sp)
-				beq $s5, $v0, assign_null # se for a raiz a recursao acaba
-				addi, $sp, $sp, 8
-				jr $ra
+		lw $v0, 8($sp)
+		beq $s5, $v0, assign_null # se for a raiz a recursao acaba
+		addi, $sp, $sp, 8
+		jr $ra
 
-			remove_node_last:
-				sb $zero, 8($v0) #setando a flag de terminal para 0
-				lw $t6, 0($v0) # $t6 recebe o endereco do filho a esquerda
-				lw $t7, 4($v0) # $t7 recebe o endereco do filho a direita
-				sub $t6, $t6, $t7 # checando se o ultimo noh tem algum filho
-				bnez $t6, remove_end # o ultimo noh tem filhos
-				addi $sp, $sp, 8	# ignorando a etapa de recursao do ultimo noh
-				lw $v0, 8($sp)	# checando se eh a raiz (chave de 1 digito)
-				beq $v0, $s5, remove_assign_null
-				j remove_node_next # retornando na recursao
+	remove_node_last:
+		sb $zero, 8($v0) #setando a flag de terminal para 0
+		lw $t6, 0($v0) # $t6 recebe o endereco do filho a esquerda
+		lw $t7, 4($v0) # $t7 recebe o endereco do filho a direita
+		sub $t6, $t6, $t7 # checando se o ultimo noh tem algum filho
+		bnez $t6, remove_end # o ultimo noh tem filhos
+		addi $sp, $sp, 8	# ignorando a etapa de recursao do ultimo noh
+		lw $v0, 8($sp)	# checando se eh a raiz (chave de 1 digito)
+		beq $v0, $s5, remove_assign_null
+		j remove_node_next # retornando na recursao
 
-				# caso um dos filhos do noh tenha de ser atribuido null
-				remove_assign_null:
-					lw $t6, 0($v0) # filho a esquerda
-					lw $t7, 4($v0) # filho a direita
-					lw $t3, 0($sp) # de onde veio na recursao
-					beq $t3, $t6, remove_assign_null_left
-					beq $t3, $t7, remove_assign_null_right
+		# caso um dos filhos do noh tenha de ser atribuido null
+	remove_assign_null:
+		lw $t6, 0($v0) # filho a esquerda
+		lw $t7, 4($v0) # filho a direita
+		lw $t3, 0($sp) # de onde veio na recursao
+		beq $t3, $t6, remove_assign_null_left
+		beq $t3, $t7, remove_assign_null_right
 
-					remove_assign_null_left:
-						sw $zero, 0($v0)
-						j remove_end_remove
+		remove_assign_null_left:
+			sw $zero, 0($v0)
+			j remove_end_remove
 
-					remove_assign_null_right:
-						sw $zero, 4($v0)
+			remove_assign_null_right:
+			sw $zero, 4($v0)
 
-				remove_end_remove:	# a remocao termina
-					move $sp, $s7 # voltando stack pointer na posicao inicial
-					lw $ra, -4($sp) # carregando endereco para sair da funcao de remover
-					jr $ra
+	remove_end_remove:	# a remocao termina
+		move $sp, $s7 # voltando stack pointer na posicao inicial
+		lw $ra, -4($sp) # carregando endereco para sair da funcao de remover
+		jr $ra
 				
 
 
