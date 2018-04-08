@@ -387,7 +387,7 @@
 				syscall
 		vis_print_continue:
 			# imprimir string ", NT" ou ", T"
-			lw $t1, 8($t0)
+			lb $t1, 8($t0)
 			bnez $t1, vis_print_T
 			
 			vis_print_NT:
