@@ -10,17 +10,17 @@
 #        Juliano Fantozzi - 9791218
 #        Andre Luis Storino Junior - 9293668
 #
-#     Montado e executado utilizando MARS
+#     Montado e executado utilizando simulador MARS.
 #
-# NOMENCLATURA DAS FUNCOES
-#   funcionalidade_funcao.
-#   Todas as funcoes foram declaradas com o nome principal seguido
-#   de sua utilidade, utilizando Snake Case. Assim, fica mais facil
-#   pesquisar todas as funcoes de insercao de noh, por exemplo, pois
-#   todas comecam com insert_node. Isso tambem nos auxiliou ao utilizar
-#   editores com completacao automatica.
+#   NOMENCLATURA DAS FUNCOES
+#       funcionalidade_funcao.
+#       Todas as funcoes foram declaradas com o nome principal seguido
+#       de sua utilidade, utilizando Snake Case. Assim, fica mais facil
+#       pesquisar todas as funcoes de insercao de noh, por exemplo, pois
+#       todas comecam com insert_node. Isso tambem nos auxiliou ao utilizar
+#       editores com completacao automatica.
 #
-# USO DE REGISTRADORES
+#   USO DE REGISTRADORES
 # +--------------+--------------------------+
 # | Registrador  |        Usado para        |
 # +--------------+--------------------------+
@@ -32,7 +32,7 @@
 # | $a1          | Endereco de 'Chave'      |
 # +--------------+--------------------------+
 #
-# ESTRUTURA DA BITWISE TRIE
+#   ESTRUTURA DA BITWISE TRIE
 # +----------------------+--------------+---------+
 # |       Atributo       | Tipo de Dado | Tamanho |
 # +----------------------+--------------+---------+
@@ -59,7 +59,7 @@
     str_sucess: .asciiz "Sucesso!\n"
 
     str_duplicated: .asciiz "Chave repetida. Insercao nao permitida.\n"
-    str_invalid: .asciiz "Chave invalida. Insira somente números binarios (ou -1 retorna ao menu)\n"
+    str_invalid: .asciiz "Chave invalida. Insira somente numeros binarios (ou -1 retorna ao menu)\n"
     str_return: .asciiz "Retornando ao menu.\n"
 
     str_exit: .asciiz "Saindo...\n"
@@ -87,9 +87,6 @@
     # Input
     chave: .space 16 # 16 digitos = 16 bytes
 
-    # Raiz da Trie
-    root: .space 8 # Cada noh possui dois ponteiros de 4 bytes (esq, dir)
-
 .text
 
     main:
@@ -100,32 +97,31 @@
         li $s2, 3 # 3 - Busca
         li $s3, 4 # 4 - Visualizar
         li $s4, 5 # 5 - Sair
+
         # Alocar noh raiz
-        li $v0, 9 # alocar memohria
+        li $v0, 9 # alocar memoria
         la $a0, 12 # 1 noh = 12 bytes (2 enderecos/ponteiros + 1 flag indicando se o noh eh terminal)
         # a flag ocupa 4 bytes ao inves de 1 byte por causa do alinhamento
         syscall
 
-        # Colocando o valor null nos ponteiros do primeiro noh
+        # Colocando o valor null nos ponteiros da raiz
         # endereco a esquerda = null
-        sw $zero, 0($v0)
+        # sw $zero, 0($v0)
+        sb $zero, 0($v0)
         # endereco a direita = null
-        sw $zero, 4($v0)
-
+        # sw $zero, 4($v0)
+        sb $zero, 4($v0)
         # flag indicando se eh noh terminal = false
-        sw $zero, 8($v0)
-
-        # Colocando o valor null nos ponteiros do primeiro noh
-        # endereco a esquerda = null
-        sw $zero, 0($v0)
-        # endereco a direita = null
-        sw $zero, 4($v0)
+        # sw $zero, 8($v0)
+        sb $zero, 8($v0)
 
         # Armazenar endereco inicial da Trie (raiz)
-        sw $v0, root
-		
-		# Armazenar endereco inicial da stack
-		add $s7, $sp, $zero
+        # sw $v0, 0(root)
+        # sw $v0, $s5
+        move $s5, $v0
+
+        # Armazenar endereco inicial da stack
+        add $s7, $sp, $zero
 
     # Funcionalidade do Menu
     menu:
@@ -165,8 +161,8 @@
         bne $v0, 1, insert_node # pede nova chave caso seja invalida
 
         # verificar se chave ja existe
-        jal search_node
-        bne $v0, 1, insert_node # pede nova chave caso seja repetida
+        # jal search_node
+        # bne $v0, 1, insert_node # pede nova chave caso seja repetida
 
         # acessar 'chave' do usuario
         # $a1 eh nosso ponteiro para iterar sobre a chave
@@ -174,41 +170,49 @@
 
         # acessar noh raiz
         # $t1 = sempre noh atual
-        la $t1, root
+        # la $t1, root
+        move $t1, $s5
+
+        li $t3, 48 # 0 em ASCII
+        li $t4, 49 # 1 em ASCII
 
         insert_node_loop:
             # percorrer chave do usuario
             # $t0 = caractere atual da chave
             # $a1 = endereco do caractere atual da chave
             lb $t0, 0($a1) # $ a1 sempre estara atualizado
-            beq $t0, $zero, insert_node_left # 0 = inserir à esquerda
-            beq $t0, $s0, insert_node_right # 1 = inserir à direita
+            beq $t0, $t3, insert_node_left # 0 = inserir à esquerda
+            beq $t0, $t4, insert_node_right # 1 = inserir à direita
 
             # fim da string significa que noh atual eh noh terminal de chave
-            sw $s0, 8($v0) # marcar flag como '1'
+            # sw $s0, 8($t1) # marcar flag como '1'
+            sb $s0, 8($t1)
 
             j insert_node # encerrou, pedir nova string ou retorno ao menu
 
         insert_node_right:
             # verificar se existe filho à direita
             # $t2 = ponteiro temporario para filhos
-            lw $t2, 4($t1)
+            lb $t2, 4($t1)
             bnez $t2, insert_descend_right
 
             # se &dir == null, criar e inserir novo noh
             insert_node_right_new:
                 # vamos alocar e inserir
-                li $v0, 9 # alocar memohria
-                li $a0, 8 # 1 noh = 8 bytes (2 enderecos/ponteiros)
+                li $v0, 9 # alocar memoria
+                li $a0, 12 # 1 noh = 12 bytes (2 enderecos/ponteiros + 1 flag)
                 syscall # $v0 contem endereco inicial do novo noh
 
                 # coloca o valor null nos ponteiros do novo noh
                 # endereco a esquerda = null
-                sw $zero, 0($v0)
-                # endereco a direita = null
-                sw $zero, 4($v0)
+                # sw $zero, 0($v0)
+                sb $zero, 0($v0)
+                # endereco a esquerda = null
+                # sw $zero, 4($v0)
+                sb $zero, 4($v0)
                 # flag indicando se eh noh terminal = false
-                sw $zero, 8($v0)
+                # sw $zero, 8($v0)
+                sb $zero, 8($v0)
 
                 sw $v0, 4($t1) # novo noh eh armazenado como filho direito do noh atual
                 # descer para novo noh e continuar loop
@@ -217,38 +221,41 @@
             insert_descend_right:
                 # descendo na arvore, t1 = &dir do noh em que estavamos
                 lw $t1, 4($t1)
-                addi $a1, $a1, 1 # ir para prohximo caractere na chave
+                addi $a1, $a1, 1 # ir para proximo caractere na chave
                 j insert_node_loop
 
         insert_node_left:
-            # verificar se existe filho à esquerda
+            # verificar se existe filho a esquerda
             # $t2 = ponteiro temporario para filhos
-            lw $t2, 0($t1)
+            lb $t2, 0($t1)
             bnez $t2, insert_descend_left
 
             # se &dir == null, criar e inserir novo noh
             insert_node_left_new:
                 # vamos alocar e inserir
-                li $v0, 9 # alocar memohria
-                li $a0, 8 # 1 noh = 8 bytes (2 enderecos/ponteiros)
+                li $v0, 9 # alocar memoria
+                li $a0, 12 # 1 noh = 8 bytes (2 enderecos/ponteiros + 1 flag)
                 syscall # $v0 contem endereco inicial do novo noh
 
                 # coloca o valor null nos ponteiros do novo noh
                 # endereco a esquerda = null
-                sw $zero, 0($v0)
+                # sw $zero, 0($v0)
+                sb $zero, 0($v0)
                 # endereco a esquerda = null
-                sw $zero, 4($v0)
+                # sw $zero, 4($v0)
+                sb $zero, 4($v0)
                 # flag indicando se eh noh terminal = false
-                sw $zero, 8($v0)
+                # sw $zero, 8($v0)
+                sb $zero, 8($v0)
 
-                sw $v0, 0($t1) # novo noh eh armazenado como filho direito do noh atual
+                sw $v0, 0($t1) # novo noh eh armazenado como filho esquerdo do noh atual
                 # descer para novo noh e continuar loop
 
-            # se &dir != null, descer para ele e voltar ao loop
+            # se &esq != null, descer para ele e voltar ao loop
             insert_descend_left:
-                # descendo na arvore, t1 = &dir do noh em que estavamos
+                # descendo na arvore, t1 = &esq do noh em que estavamos
                 lw $t1, 0($t1)
-                addi $a1, $a1, 1 # ir para prohximo caractere na chave
+                addi $a1, $a1, 1 # ir para proximo caractere na chave
                 j insert_node_loop
 
 
@@ -294,13 +301,12 @@
             li $v0, 1 # return 1
             jr $ra
 
-
     # +---------+
     # | REMOCAO |
     # +---------+
     remove_node:
-    	li $v0, 4 # imprimir string
-	la $a0, str_remove
+        li $v0, 4 # imprimir string
+        la $a0, str_remove
         syscall
 
         li $v0, 8 # ler string
@@ -354,62 +360,60 @@
                 addi, $a1, $a1, 1 # incrementando o input do usuario
                 lb $t0, 0($a1) # carregando o proximo elemento da string
                 jal remove_node_recursion_loop
-                
+
             remove_return_recursion:
                 lw $t6, 0($v0) # $t6 = filho a esquerda do noh processado
-		lw $t7, 4($v0) # $t7 = filho a direita do noh processado
-		lb $t5, 8($v0) # load da flag para verificar se é noh terminal ou não
+            lw $t7, 4($v0) # $t7 = filho a direita do noh processado
+            lb $t5, 8($v0) # load da flag para verificar se é noh terminal ou não
 
-		# caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
-		bnez $t5, end_recursion	# eh noh terminal
-		add $t5, $t6, $t7	# $t5 = fesq + fdir
-		#se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
-		beq $t5, $t6, remove_node_next
-		beq $t5, $t7, remove_node_next
+            # caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
+            bnez $t5, end_recursion    # eh noh terminal
+            add $t5, $t6, $t7    # $t5 = fesq + fdir
+            #se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
+            beq $t5, $t6, remove_node_next
+            beq $t5, $t7, remove_node_next
 
-		end_recursion:
-			addi $sp, $sp, -8
-			j remove_assign_null
+            end_recursion:
+            addi $sp, $sp, -8
+            j remove_assign_null
 
             remove_node_next:
                 lw $ra, 4($sp) #pop da pilha
-		lw $v0, 8($sp)
-		beq $s5, $v0, assign_null # se for a raiz a recursao acaba
-		addi, $sp, $sp, 8
-		jr $ra
+                lw $v0, 8($sp)
+                beq $s5, $v0, remove_assign_null # se for a raiz a recursao acaba
+                addi, $sp, $sp, 8
+                jr $ra
 
-	remove_node_last:
-		sb $zero, 8($v0) #setando a flag de terminal para 0
-		lw $t6, 0($v0) # $t6 recebe o endereco do filho a esquerda
-		lw $t7, 4($v0) # $t7 recebe o endereco do filho a direita
-		sub $t6, $t6, $t7 # checando se o ultimo noh tem algum filho
-		bnez $t6, remove_end # o ultimo noh tem filhos
-		addi $sp, $sp, 8	# ignorando a etapa de recursao do ultimo noh
-		lw $v0, 8($sp)	# checando se eh a raiz (chave de 1 digito)
-		beq $v0, $s5, remove_assign_null
-		j remove_node_next # retornando na recursao
+            remove_node_last:
+            sb $zero, 8($v0) #setando a flag de terminal para 0
+            lw $t6, 0($v0) # $t6 recebe o endereco do filho a esquerda
+            lw $t7, 4($v0) # $t7 recebe o endereco do filho a direita
+            sub $t6, $t6, $t7 # checando se o ultimo noh tem algum filho
+            bnez $t6, remove_end # o ultimo noh tem filhos
+            addi $sp, $sp, 8    # ignorando a etapa de recursao do ultimo noh
+            lw $v0, 8($sp)    # checando se eh a raiz (chave de 1 digito)
+            beq $v0, $s5, remove_assign_null
+            j remove_node_next # retornando na recursao
 
-		# caso um dos filhos do noh tenha de ser atribuido null
-	remove_assign_null:
-		lw $t6, 0($v0) # filho a esquerda
-		lw $t7, 4($v0) # filho a direita
-		lw $t3, 0($sp) # de onde veio na recursao
-		beq $t3, $t6, remove_assign_null_left
-		beq $t3, $t7, remove_assign_null_right
+            # caso um dos filhos do noh tenha de ser atribuido null
+            remove_assign_null:
+            lw $t6, 0($v0) # filho a esquerda
+            lw $t7, 4($v0) # filho a direita
+            lw $t3, 0($sp) # de onde veio na recursao
+            beq $t3, $t6, remove_assign_null_left
+            beq $t3, $t7, remove_assign_null_right
 
-		remove_assign_null_left:
-		sw $zero, 0($v0)
-		j remove_end_remove
+            remove_assign_null_left:
+            sw $zero, 0($v0)
+            j remove_end
 
-		remove_assign_null_right:
-		sw $zero, 4($v0)
+            remove_assign_null_right:
+            sw $zero, 4($v0)
 
-	remove_end_remove:	# a remocao termina
-		move $sp, $s7 # voltando stack pointer na posicao inicial
-		lw $ra, -4($sp) # carregando endereco para sair da funcao de remover
-		jr $ra
-				
-
+            remove_end:    # a remocao termina
+            move $sp, $s7 # voltando stack pointer na posicao inicial
+            lw $ra, -4($sp) # carregando endereco para sair da funcao de remover
+            jr $ra
 
     # +--------------+
     # | VISUALIZACAO |
@@ -431,8 +435,8 @@
     visualize:
 
         # armazenando endereco da raiz
-        # lw $t0, $s5
-        lw $t0, root
+        lw $t0, ($s5)
+        # lw $t0, root
 
         # nivel inicial = 0
         li $t2, 0
@@ -729,7 +733,7 @@
         check_input_continue:
             # Ver se esta na posicao final da entrada
             lb $t0, 1($a1) # carrega proximo byte da string
-            addi $a1, $a1, 1 # Andar para o prohximo char
+            addi $a1, $a1, 1 # Andar para o proximo char
             j check_input_loop # reinicia check_input_loop
 
         # voltar ao menu (-1)
@@ -743,9 +747,9 @@
         check_input_return2:
             lb $t0 2($a1)
             # checando se eh '\n'
-            beq $t0, $t4, check_input_return3
+            beq $t0, $t4, check_input_pass
             # checando se eh '\0'
-            beq $t0, $zero, check_input_return3
+            beq $t0, $zero, check_input_pass
             j check_input_error
 
         check_input_return3:
@@ -766,7 +770,7 @@
             jr $ra # retornar
 
         check_input_pass:
-            #print string retorno
+            # exibir string de retorno
             li $v0, 4
             la $a0, str_return
             syscall
