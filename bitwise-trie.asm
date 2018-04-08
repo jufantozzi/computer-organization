@@ -12,6 +12,14 @@
 #
 #     Montado e executado utilizando MARS
 #
+# NOMENCLATURA DAS FUNÇÕES
+#   funcionalidade_funcao.
+#   Todas as funções foram declaradas com o nome principal seguido
+#   de sua utilidade, utilizando Snake Case. Assim, fica mais fácil
+#   pesquisar todas as funções de inserção de nó, por exemplo, pois
+#   todas começam com insert_node. Isso também nos auxiliou ao utilizar
+#   editores com completação automática.
+#
 # USO DE REGISTRADORES
 # +--------------+--------------------------+
 # | Registrador  |        Usado para        |
@@ -137,6 +145,7 @@
 
     # Funcionalidades da Trie
 
+
     # +----------+
     # | INSERÇÃO |
     # +----------+
@@ -240,6 +249,7 @@
                 addi $a1, $a1, 1 # ir para próximo caractere na chave
                 j insert_node_loop
 
+
     # +-------+
     # | BUSCA |
     # +-------+
@@ -281,6 +291,95 @@
         search_found:
             li $v0, 1 # return 1
             jr $ra
+
+    # +---------+
+    # | REMOÇÃO |
+    # +---------+
+    remove_node:
+        li $v0, 4 # imprimir string
+        la $a0, str_remove
+        syscall
+
+        li $v0, 8 # ler string
+        la $a0, chave
+        li $a1, 16
+        syscall
+
+        jal check_input # verifica se o input esta correto
+        bne $v0, 1, remove_node
+
+        jal search_node # verifica se a chave a ser deletada existe de fato
+        beq $v0, -1, error_str_not_found
+
+        # setup para a recursão
+        la $a1, chave # a1 = input
+        move $v0, $s5 # v0 = root
+        lb $t0, 0($a1) # carrega primeiro digito do input
+        jal remove_node_recursion # chama recursão
+
+        remove_node_recursion:
+            #t0 = recebe de $a1 o byte da chave de entrada (input do usuario)
+            #t1 = '0' ||  #a0 = nó pai de $v0
+            #t2 = '1' ||  #a1 = input string
+            #t4 = '\n'||  #v0 = retorno
+            remove_node_recursion_loop:
+                #push da recursão
+                sw $v0, 0($sp)
+                sw $ra, -4($sp)
+                addi $sp, $sp, -8
+                #jump para os casos
+                beq $t0, $t1, remove_node_zero
+                beq $t0, $t2, remove_node_one
+                beq $t0, $t4, remove_node_set_flag # caso base, quando $t0 = \n
+                beqz $t0, remove_node_set_flag # caso base, quando $t0 = \0
+
+            remove_node_zero:
+                move $a0, $v0
+                lw $v0, 0($a0) # carrega endereço "0" da arvore (nó a esquerda)
+                addi, $a1, $a1, 1  # incrementando o input do usuario
+                lb $t0, 0($a1) # carregando o proximo elemento da string
+                jal remove_node_recursion_loop
+                lw $t3, 0($v0) # preparando a subtração dos endereços
+                lw $t5, 4($v0) # preparando a subtração dos endereços
+                sub $t3, $t3, $t5 # caso a subtração seja != 0, pelo menos 1 dos dois existe, não pode ser deletado
+                lb $t5, 8($v0) # load da flag para verificar se é node terminal ou não
+                sub $t3, $t3, $t5 # caso a subtração seja != 0, ou a flag existe ou algum dos endereços existem. Não pode deletar
+                beqz $t3, remove_node_pop_remove_zero
+                j r_node_found
+
+            remove_node_one:
+                move $a0, $v0
+                lw $v0, 4($a0) # carrega endereço "1" da arvore (a direita)
+                addi, $a1, $a1, 1 # incrementando o input do usuario
+                lb $t0, 0($a1) # carregando o proximo elemento da string
+                jal remove_node_recursion_loop
+                lw $t3, 0($v0) # preparando a subtração dos endereços
+                lw $t5, 4($v0) # preparando a subtração dos endereços
+                sub $t3, $t3, $t5 # caso a subtração seja != 0, pelo menos 1 dos dois existe, não pode ser deletado
+                lb $t5, 8($v0) # load da flag para verificar se é node terminal ou não
+                sub $t3, $t3, $t5 # caso a subtração seja != 0, ou a flag existe ou algum dos endereços existem. Não pode deletar
+                beqz $t3, remove_node_pop_remove_zero
+                j r_node_found
+
+            r_node_found:
+                lw $ra, 4($sp) # pop da pilha
+                lw $v0, 8($sp)
+                addi, $sp, $sp, 8
+                jr $ra
+
+            remove_node_pop_remove_zero:
+                lw $v0, 8($sp) # carregando endereço na pilha
+                sw $zero, 0($v0) # setando o nó filho a esquerda em 0 (remoção)
+                j r_node_found
+
+            remove_node_pop_remove_zero:
+                lw $v0, 8($sp) # carregando endereço na pilha
+                sw $zero, 4($v0) # setando o nó filho a direita em 0 (remoção)
+                j r_node_found
+
+            remove_node_set_flag:
+                sb $zero, 8($v0) # setando a flag de terminal para 0
+                j r_node_found
 
     # +--------------+
     # | VISUALIZAÇÃO |
