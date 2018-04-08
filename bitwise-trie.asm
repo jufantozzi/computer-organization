@@ -69,11 +69,11 @@
     str_vis_root: .asciiz "raiz"
     str_vis_zero: .asciiz "0"
     str_viz_one: .asciiz "1"
-    srt_vis_t: .asciiz ", T"
+    str_vis_t: .asciiz ", T"
     str_vis_nt: .asciiz ", NT"
-    str_vis_null: .asciiz ", null"
+    #str_vis_null: .asciiz ", null"
     str_vis_comma: .asciiz ", "
-    str_vis_p2: .asciiz ") "
+    #str_vis_p2: .asciiz ") "
     str_vis_nl: .asciiz "\n"
 
     # Input
@@ -129,7 +129,7 @@
 
         # ir para opção escolhida
         beq $t0, $s0, insert_node # 1
-        beq $t0, $s1, remove_node # 2
+        #beq $t0, $s1, remove_node # 2
         beq $t0, $s2, search_node # 3
         beq $t0, $s3, visualize # 4
         beq $t0, $s4, exit # 5
@@ -199,7 +199,7 @@
                 # flag indicando se eh noh terminal = false
                 sw $zero, 8($v0)
 
-                sw 4($t1), $v0 # novo nó é armazenado como filho direito do nó atual
+                sw $v0, 4($t1) # novo nó é armazenado como filho direito do nó atual
                 # descer para novo nó e continuar loop
 
             # se &dir != null, descer para ele e voltar ao loop
@@ -230,7 +230,7 @@
                 # flag indicando se eh noh terminal = false
                 sw $zero, 8($v0)
 
-                sw 0($t1), $v0 # novo nó é armazenado como filho direito do nó atual
+                sw $v0, 0($t1) # novo nó é armazenado como filho direito do nó atual
                 # descer para novo nó e continuar loop
 
             # se &dir != null, descer para ele e voltar ao loop
@@ -309,7 +309,7 @@
         li $t2, 0
 
         # inicializando fila
-        add $t5, $zero
+        add $t5, $zero, $zero
 
         # adicionando elemento sentinela na fila para contar os niveis da arvore
         add $a0, $t5, $zero
@@ -380,8 +380,8 @@
         # imprime o endereco do filho a direita
         # adiciona o filho a direita na fila
         vis_print_right:
-            li $v0, 4 # imprimir string ", &dir"
-            la $a0, str_vis_dir
+            li $v0, 4 # imprimir string "
+            la $a0, str_vis_comma
             syscall
 
             li $v0, 1 # imprimir o endereco do filho a direita
@@ -525,7 +525,7 @@
     # $v0 ira retornar o endereco da primeira estrutura alocada na fila caso contrario
     queue_empty:
         add $v0, $a0, $zero
-        j $ra
+        jr $ra
 
     # $a0 tem o primeiro elemento da fila
     # $a1 tem o endereco do noh a ser armazenado
@@ -571,7 +571,7 @@
         dequeue_empty:
             li $v0, 0
             li $v1, 0
-            j $ra
+            jr $ra
 
     # +--------------+
     # | CHECAR INPUT |
@@ -616,36 +616,7 @@
             # checando se eh '\n'
             beq $t0, $t4, check_input_return3
             # checando se eh '\0'
-            beq $t0, $zero, check_input_return 3
-            j check_input_error
-
-        check_input_return3:
-            # Exibir string de retorno
-            # Imprimir string
-            li $v0, 4
-            la $a0, str_return
-            syscall
-
-            lb $t0, 0($a1) # carrega byte sem sinal
-            beq $t0, $zero, check_input_pass # verifica se é '\0', se chegou no final, sucesso
-
-            addi $a1, $a1, 4 # Andar para o próximo char checando novamente se é válido
-            j check_input_loop
-
-        # voltar ao menu (-1)
-        # checando se o byte seguido do '-' equivale ao digito '1'
-        check_input_return1:
-            lb $t0 1($a1)
-            beq $t0, $t2, check_input_return2
-            j check_input_error
-
-        # checando se a string acabou apos o "-1"
-        check_input_return2:
-            lb $t0 2($a1)
-            # checando se eh '\n'
-            beq $t0, $t4, check_input_return3
-            # checando se eh '\0'
-            beq $t0, $zero, check_input_return 3
+            beq $t0, $zero, check_input_return3
             j check_input_error
 
         check_input_return3:
