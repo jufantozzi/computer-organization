@@ -58,6 +58,9 @@
     str_repeat: .asciiz "Binario ja existente na arvore."
     str_sucess: .asciiz "Sucesso!\n"
 
+    str_found: .asciiz "Chave encontrada na arvore: "
+    str_not_found: .asciiz "Chave nao encontrada na arvore: "
+
     str_duplicated: .asciiz "Chave repetida. Insercao nao permitida.\n"
     str_invalid: .asciiz "Chave invalida. Insira somente numeros binarios (ou -1 retorna ao menu)\n"
     str_return: .asciiz "Retornando ao menu.\n"
@@ -136,8 +139,8 @@
 
         # ir para opcao escolhida
         beq $t0, $s0, insert_node # 1
-        #beq $t0, $s1, remove_node # 2
-        beq $t0, $s2, search_node # 3
+        beq $t0, $s1, remove_node # 2
+        beq $t0, $s2, search_node_new # 3
         beq $t0, $s3, visualize # 4
         beq $t0, $s4, exit # 5
         j menu # loop (opcao invalida)
@@ -167,7 +170,7 @@
 
         # verificar se chave ja existe
         jal search_node
-        bne $v0, 1, insert_node_repeat # pede nova chave caso seja repetida
+        bne $v0, -1, insert_node_repeat # pede nova chave caso seja repetida
 
         # acessar 'chave' do usuario
         # $a1 eh nosso ponteiro para iterar sobre a chave
@@ -196,7 +199,7 @@
             j insert_node # encerrou, pedir nova string ou retorno ao menu
 
         insert_node_right:
-            # verificar se existe filho à direita
+            # verificar se existe filho ? direita
             # $t2 = ponteiro temporario para filhos
             lb $t2, 4($t1)
             bnez $t2, insert_descend_right
@@ -267,6 +270,43 @@
     # +-------+
     # | BUSCA |
     # +-------+
+    search_node_new:
+        li $v0, 4 # imprimir string
+        la $a0, str_search
+        syscall
+
+        li $v0, 8 # ler string
+        la $a0, chave # armazenar input do usuario em 'chave'
+        li $a1, 16 # preparar para ler 16 bytes
+        syscall
+
+        jal check_input # verificar se input eh valido (volta ao menu se -1)
+        beq $v0, -1, search_node_new # pede nova chave caso seja invalida
+
+        jal search_node
+        beq $v0, 1, search_node_new_sucess # se retorno 1 = sucesso na busca
+
+        # se retorno != 1, falha na busca
+        search_node_new_failure:
+            li $v0, 4 # imprimir string
+            la $a0, str_not_found # imprimir que chave nao foi encontrada
+            syscall
+
+            li $v0, 4 # imprimir string
+            la $a0, chave # imprimir a chave
+            syscall
+            j search_node_new
+
+        search_node_new_sucess:
+            li $v0, 4 # imprimir string
+            la $a0, str_found # imprimir que chave foi encontrada
+            syscall
+
+            li $v0, 4 # imprimir string
+            la $a0, chave # imprimir a chave
+            syscall
+            j search_node_new
+
     search_node:
         # carregar valores de comparacao
         li $t1, 48 # 0 em ASCII
@@ -275,36 +315,48 @@
 
         la $a1, chave # a1 = input
         move $a0, $s5 # a0 = root
-        lb $t0, 0($a1) # carrega primeiro digito do input
+        lb $t0, 0($a1) # $t0 = carrega digito da chave
 
         search_node_loop:
-            beq $t0, $t4, search_node_found # fim da leitura '\n'
-            beq $t0, $zero, search_node_found # fim da leitura '\0'
+            beq $t0, $t4, search_last_node_found # fim da leitura '\n'
+            beq $t0, $zero, search_last_node_found # fim da leitura '\0'
             beq $t0, $t1, search_node_zero # caso byte == '0' goto search_node_zero
             beq $t0, $t2, search_node_one # caso byte == '1' goto search_node_one
             j search_node_loop
 
         search_node_zero:
-            lw $t0, 0($s5) # carrega endereco "0" da arvore
-            bnez $t0, search_next_char # caso haja um endereco, continue percorrendo o vetor
-            beqz $t0, search_not_found # caso nao haja endereco, retornar "input nao encontrado"
+            lw $t0, 0($a0) # carrega endereco "0" da arvore
+            bnez $t0, search_next_node_case_zero # caso haja um endereco, continue percorrendo o vetor
+            beqz $t0, search_return_failure # caso nao haja endereco, retornar "input nao encontrado"
 
         search_node_one:
-            lw $t0, 4($s5) # carrega endereco "1" da arvore
-            bnez $t0, search_next_char # caso haja um endereco, continue percorrendo o vetor
-            beqz $t0, search_not_found # caso nao haja endereco, retornar "input nao encontrado
+            lw $t0, 4($a0) # carrega endereco "1" da arvore
+            bnez $t0, search_next_node_case_one # caso haja um endereco, continue percorrendo o vetor
+            beqz $t0, search_return_failure # caso nao haja endereco, retornar "input nao encontrado
 
-        search_next_char:
+        search_next_node_case_zero:
             addi $a1, $a1, 1
             lb $t0, 0($a1)
+            lw $a0, 0($a0)
             j search_node_loop
 
-        search_node_not_found:
-            li $v0, -1 # return -1
+        search_next_node_case_one:
+            addi $a1, $a1, 1
+            lb $t0, 0($a1)
+            lw $a0, 4($a0)
+            j search_node_loop
+
+        search_last_node_found:
+            lb $t0, 8($a0) #load da flag
+            beq $t0, $zero, search_return_failure #caso n?o exista a flag, nao eh um noh terminal. Se for um noh terminal, a chave foi encontrada
+            beq $t0, 1, search_return_sucess #caso exista a flag, ? um noh terminal. Se for um noh terminal, a chave foi encontrada
+
+        search_return_sucess:
+            li $v0, 1 # return 1
             jr $ra
 
-        search_node_found:
-            li $v0, 1 # return 1
+        search_return_failure:
+            li $v0, -1 # return -1
             jr $ra
 
     # +---------+
@@ -370,7 +422,7 @@
             remove_return_recursion:
                 lw $t6, 0($v0) # $t6 = filho a esquerda do noh processado
             lw $t7, 4($v0) # $t7 = filho a direita do noh processado
-            lb $t5, 8($v0) # load da flag para verificar se é noh terminal ou não
+            lb $t5, 8($v0) # load da flag para verificar se ? noh terminal ou n?o
 
             # caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
             bnez $t5, end_recursion    # eh noh terminal
@@ -753,9 +805,9 @@
         check_input_return2:
             lb $t0 2($a1)
             # checando se eh '\n'
-            beq $t0, $t4, check_input_pass
+            beq $t0, $t4, check_input_return3
             # checando se eh '\0'
-            beq $t0, $zero, check_input_pass
+            beq $t0, $zero, check_input_return3
             j check_input_error
 
         check_input_return3:
@@ -776,11 +828,7 @@
             jr $ra # retornar
 
         check_input_pass:
-            # exibir string de retorno
-            li $v0, 4
-            la $a0, str_return
-            syscall
-
+            # retornar com sucesso
             li $v0, 1 # 1 no retorno = sucesso
             jr $ra
 
