@@ -123,6 +123,9 @@
 
         # Armazenar endereco inicial da Trie (raiz)
         sw $v0, root
+		
+		# Armazenar endereco inicial da stack
+		add $s7, $sp, $zero
 
     # Funcionalidade do Menu
     menu:
@@ -316,15 +319,16 @@
         move $v0, $s5 # v0 = root
         lb $t0, 0($a1) # carrega primeiro digito do input
         jal remove_node_recursion # chama recursao
+        j menu # volta ao menu
 
         remove_node_recursion:
             #t0 = recebe de $a1 o byte da chave de entrada (input do usuario)
             #t1 = '0'
             #t2 = '1'
             #t4 = '\n'
-            #a0 = noh pai de $v0
+            #a0 = auxiliar para descer na recursao
             #a1 = input string
-            #v0 = retorno
+            #v0 = endereco do noh sendo processado
             remove_node_recursion_loop:
                 #push da recursao
                 sw $v0, 0($sp)
@@ -333,56 +337,78 @@
                 #jump para os casos
                 beq $t0, $t1, remove_node_zero
                 beq $t0, $t2, remove_node_one
-                beq $t0, $t4, remove_node_set_flag # caso base, quando $t0 = \n
-                beqz $t0, remove_node_set_flag # caso base, quando $t0 = \0
+                beq $t0, $t4, remove_node_last # caso base, quando $t0 = \n
+                beqz $t0, remove_node_last # caso base, quando $t0 = \0
 
             remove_node_zero:
-                move $a0, $v0
+                move $a0, $v0 # $a0 salva o endereco do noh atual
                 lw $v0, 0($a0) # carrega endereco "0" da arvore (noh a esquerda)
                 addi, $a1, $a1, 1  # incrementando o input do usuario
                 lb $t0, 0($a1) # carregando o proximo elemento da string
                 jal remove_node_recursion_loop
-                lw $t3, 0($v0) # preparando a subtracao dos enderecos
-                lw $t5, 4($v0) # preparando a subtracao dos enderecos
-                sub $t3, $t3, $t5 # caso a subtracao seja != 0, pelo menos 1 dos dois existe, nao pode ser deletado
-                lb $t5, 8($v0) # load da flag para verificar se eh node terminal ou nao
-                sub $t3, $t3, $t5 # caso a subtracao seja != 0, ou a flag existe ou algum dos enderecos existem. Nao pode deletar
-                beqz $t3, remove_node_pop_remove_zero
-                j remove_node_found
+                j remove_return_recursion
 
             remove_node_one:
-                move $a0, $v0
-                lw $v0, 4($a0) # carrega endereco "1" da arvore (a direita)
+                move $a0, $v0 # $a0 salva o endereco do noh atual
+                lw $v0, 4($a0) # carrega endereco "1" da arvore (noh a direita)
                 addi, $a1, $a1, 1 # incrementando o input do usuario
                 lb $t0, 0($a1) # carregando o proximo elemento da string
                 jal remove_node_recursion_loop
-                lw $t3, 0($v0) # preparando a subtracao dos enderecos
-                lw $t5, 4($v0) # preparando a subtracao dos enderecos
-                sub $t3, $t3, $t5 # caso a subtracao seja != 0, pelo menos 1 dos dois existe, nao pode ser deletado
-                lb $t5, 8($v0) # load da flag para verificar se eh node terminal ou nao
-                sub $t3, $t3, $t5 # caso a subtracao seja != 0, ou a flag existe ou algum dos enderecos existem. Nao pode deletar
-                beqz $t3, remove_node_pop_remove_one
-                j remove_node_found
+                
+            remove_return_recursion:
+                lw $t6, 0($v0) # $t6 = filho a esquerda do noh processado
+				lw $t7, 4($v0) # $t7 = filho a direita do noh processado
+				lb $t5, 8($v0) # load da flag para verificar se é noh terminal ou não
 
-            remove_node_found:
-                lw $ra, 4($sp) # pop da pilha
-                lw $v0, 8($sp)
-                addi, $sp, $sp, 8
-                jr $ra
+				# caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
+				bnez $t5, end_recursion	# eh noh terminal
+				add $t5, $t6, $t7	# $t5 = fesq + fdir
+				#se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
+				beq $t5, $t6, remove_node_next
+				beq $t5, $t7, remove_node_next
 
-            remove_node_pop_remove_zero:
-                lw $v0, 8($sp) # carregando endereco na pilha
-                sw $zero, 0($v0) # setando o noh filho a esquerda em 0 (remocao)
-                j remove_node_found
+				end_recursion:
+					addi $sp, $sp, -8
+					j remove_assign_null
 
-            remove_node_pop_remove_one:
-                lw $v0, 8($sp) # carregando endereco na pilha
-                sw $zero, 4($v0) # setando o noh filho a direita em 0 (remocao)
-                j remove_node_found
+            remove_node_next:
+                lw $ra, 4($sp) #pop da pilha
+				lw $v0, 8($sp)
+				beq $s5, $v0, assign_null # se for a raiz a recursao acaba
+				addi, $sp, $sp, 8
+				jr $ra
 
-            remove_node_set_flag:
-                sb $zero, 8($v0) # setando a flag de terminal para 0
-                j remove_node_found
+			remove_node_last:
+				sb $zero, 8($v0) #setando a flag de terminal para 0
+				lw $t6, 0($v0) # $t6 recebe o endereco do filho a esquerda
+				lw $t7, 4($v0) # $t7 recebe o endereco do filho a direita
+				sub $t6, $t6, $t7 # checando se o ultimo noh tem algum filho
+				bnez $t6, remove_end # o ultimo noh tem filhos
+				addi $sp, $sp, 8	# ignorando a etapa de recursao do ultimo noh
+				lw $v0, 8($sp)	# checando se eh a raiz (chave de 1 digito)
+				beq $v0, $s5, remove_assign_null
+				j remove_node_next # retornando na recursao
+
+				# caso um dos filhos do noh tenha de ser atribuido null
+				remove_assign_null:
+					lw $t6, 0($v0) # filho a esquerda
+					lw $t7, 4($v0) # filho a direita
+					lw $t3, 0($sp) # de onde veio na recursao
+					beq $t3, $t6, remove_assign_null_left
+					beq $t3, $t7, remove_assign_null_right
+
+					remove_assign_null_left:
+						sw $zero, 0($v0)
+						j remove_end_remove
+
+					remove_assign_null_right:
+						sw $zero, 4($v0)
+
+				remove_end_remove:	# a remocao termina
+					move $sp, $s7 # voltando stack pointer na posicao inicial
+					lw $ra, -4($sp) # carregando endereco para sair da funcao de remover
+					jr $ra
+				
 
 
     # +--------------+
