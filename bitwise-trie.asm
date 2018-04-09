@@ -800,7 +800,7 @@
 
         check_input_return3:
             # Exibir string de retorno
-            li $v0, 4       # Imprimir string
+            li $v0, 4           # Imprimir string
             la $a0, str_return
             syscall
 
