@@ -55,15 +55,14 @@
     str_remove: .asciiz "Digite o binario para remocao: "
     str_search: .asciiz "Digite o binario para busca: "
 
-    str_repeat: .asciiz "Binario ja existente na arvore."
-    str_sucess: .asciiz "Sucesso!\n"
-
     str_found: .asciiz "Chave encontrada na arvore: "
     str_not_found: .asciiz "Chave nao encontrada na arvore: "
 
     str_duplicated: .asciiz "Chave repetida. Insercao nao permitida.\n"
     str_invalid: .asciiz "Chave invalida. Insira somente numeros binarios (ou -1 retorna ao menu)\n"
     str_return: .asciiz "Retornando ao menu.\n"
+
+    str_removed: .asciiz "Chave removida com sucesso."
 
     str_exit: .asciiz "Saindo...\n"
 
@@ -376,7 +375,7 @@
         bne $v0, 1, remove_node # pede nova chave caso esteja incorreto
 
         jal search_node # verifica se a chave a ser deletada existe de fato
-        beq $v0, -1, remove_node # pede nova chave caso chave nao exista
+        beq $v0, -1, remove_node_fail # chave n?o encontrada
 
         # setup para a recursao
         la $a1, chave # a1 = input
@@ -384,6 +383,17 @@
         lb $t0, 0($a1) # carrega primeiro digito do input
         jal remove_node_recursion # chama recursao
         j menu # volta ao menu
+
+        remove_node_fail:
+            li $v0, 4 # imprimir string
+            la $a0, str_not_found # imprimir que chave nao foi encontrada
+            syscall
+
+            li $v0, 4 # imprimir string
+            la $a0, chave # imprimir a chave
+            syscall
+
+            j remove_node # voltar e pedir nova chave
 
         remove_node_recursion:
             #t0 = recebe de $a1 o byte da chave de entrada (input do usuario)
@@ -468,10 +478,15 @@
             remove_assign_null_right:
             sw $zero, 4($v0)
 
-            remove_end:    # a remocao termina
+            # a remocao termina
+            remove_end:
             move $sp, $s7 # voltando stack pointer na posicao inicial
             lw $ra, -4($sp) # carregando endereco para sair da funcao de remover
-            jr $ra
+            li $v0, 4 # imprimir string
+            la $a0, str_removed # imprimir que chave nao foi encontrada
+            syscall
+
+            j remove_node
 
     # +--------------+
     # | VISUALIZACAO |
