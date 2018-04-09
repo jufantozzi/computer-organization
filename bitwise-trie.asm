@@ -62,6 +62,7 @@
     str_invalid: .asciiz "Chave invalida. Insira somente numeros binarios (ou -1 retorna ao menu)\n"
     str_return: .asciiz "Retornando ao menu.\n"
 
+    str_inserted: .asciiz "Chave inserida com sucesso.\n"
     str_removed: .asciiz "Chave removida com sucesso.\n"
 
     str_exit: .asciiz "Saindo...\n"
@@ -85,6 +86,14 @@
 
     str_vis_comma: .asciiz ", "
     str_vis_nl: .asciiz "\n"
+
+    # Strings da impressao de busca
+    str_path_not_found: .asciiz "-1\n"
+    str_pre_path: .asciiz "Caminho percorrido: raiz, "
+    str_dir: .asciiz "dir, "
+    str_dir_final: .asciiz "dir\n"
+    str_esq: .asciiz "esq, "
+    str_esq_final: .asciiz "esq\n"
 
     # Input do usuário
     chave: .space 16 # 16 digitos = 16 bytes
@@ -129,9 +138,9 @@
         beq $t0, $s0, insert       # 1
         beq $t0, $s1, remove       # 2
         beq $t0, $s2, search_new   # 3
-        beq $t0, $s3, visualize         # 4
-        beq $t0, $s4, exit              # 5
-        j menu                          # loop (opcao invalida)
+        beq $t0, $s3, visualize    # 4
+        beq $t0, $s4, exit         # 5
+        j menu                     # loop (opcao invalida)
 
     # Funcionalidades da Trie
 
@@ -175,13 +184,18 @@
             # percorrer chave do usuario
             # $t0 = caractere atual da chave
             # $a1 = endereco do caractere atual da chave
-            lb $t0, 0($a1)                      # $ a1 sempre estara atualizado
+            lb $t0, 0($a1)                 # $ a1 sempre estara atualizado
             beq $t0, $t3, insert_left      # 0 = inserir a esquerda
             beq $t0, $t4, insert_right     # 1 = inserir a direita
 
             # fim da string significa que noh atual eh noh terminal de chave
-            sb $s0, 8($t1)                      # marcar flag como '1'
-            j insert                       # encerrou, pedir nova string ou retorno ao menu
+            sb $s0, 8($t1)                  # marcar flag como '1'
+
+            li $v0, 4                       # imprimir string
+            la $a0, str_inserted            # exibir mensagem de sucesso
+            syscall
+
+            j insert                        # encerrou, pedir nova string ou retorno ao menu
 
         insert_right:
             # verificar se existe filho ? direita
@@ -254,7 +268,6 @@
 
         jal check_input                     # verificar se input eh valido (volta ao menu se -1)
         beq $v0, -1, search_new        # pede nova chave caso seja invalida
-
         jal search
         beq $v0, 1, search_new_sucess  # se retorno 1 = sucesso na busca
 
@@ -265,8 +278,10 @@
             syscall
 
             li $v0, 4                       # imprimir string
-            la $a0, chave                   # imprimir a chave
+            la $a0, str_path_not_found         # imprimir a chave
             syscall
+
+            jal print_path
 
             j search_new
 
@@ -278,6 +293,9 @@
             li $v0, 4                       # imprimir string
             la $a0, chave                   # imprimir a chave
             syscall
+
+            jal print_path
+
             j search_new
 
     search:
@@ -332,6 +350,68 @@
             li $v0, -1          # return -1
             jr $ra
 
+    # +--------------------+
+    # | CAMINHO PERCORRIDO |
+    # +--------------------+
+    print_path:
+          # Percorrer string de entrada
+            li $t1, 48         # 0 em ASCII
+            li $t2, 49         # 1 em ASCII
+            li $t4, 10         # \n em ASCII
+            la $a1, chave      # carregar endereco de chave em $a1
+
+            li $v0, 4 # imprimir string
+            la $a0, str_pre_path # imprimir string inicial
+            syscall
+
+        print_path_loop:
+            lb $t0, 0($a1) # Carregar valor de endereco em a1 e colocar em $t0
+            lb $t3, 1($a1) # Carregar o proximo valor: caso seja um terminal, imprimir string final
+            # Verificar se bit atual eh 0, 1
+            beq $t3, $t4, print_path_end    #chega se o proximo eh terminal
+            beq $t0, $t1, print_esq      # checa se o atual eh 0
+            beq $t0, $t2, print_dir      # checa se o atual eh
+
+        # eh 0 ou 1, continua
+        print_esq:
+            # Ver se esta na posicao final da entrada
+            li $v0, 4 # imprimir string
+            la $a0, str_esq # imprimir que chave nao foi encontrada
+            syscall
+
+            lb $t0, 1($a1)              # carrega proximo byte da string
+            addi $a1, $a1, 1            # Andar para o proximo char
+
+        j print_path_loop
+
+        print_dir:
+                # Ver se esta na posicao final da entrada
+                li $v0, 4 # imprimir string
+                la $a0, str_dir # imprimir que chave nao foi encontrada
+                syscall
+
+                lb $t0, 1($a1)              # carrega proximo byte da string
+                addi $a1, $a1, 1            # Andar para o proximo char
+            j print_path_loop
+
+    print_path_end:
+        beq $t0, $t1, print_path_end_esq      # checa se o atual eh 0
+            beq $t0, $t2, print_path_end_dir      # checa se o atual eh 1
+
+    print_path_end_esq:
+            # Ver se esta na posicao final da entrada
+            li $v0, 4 # imprimir string
+            la $a0, str_esq_final # imprimir que chave nao foi encontrada
+            syscall
+            jr $ra
+            #jump pra algum lugar
+
+        print_path_end_dir:
+            # Ver se esta na posicao final da entrada
+            li $v0, 4 # imprimir string
+            la $a0, str_dir_final # imprimir que chave nao foi encontrada
+            syscall
+        jr $ra
 
     # +---------+
     # | REMOCAO |
@@ -350,7 +430,7 @@
         bne $v0, 1, remove         # pede nova chave caso esteja incorreto
 
         jal search                 # verifica se a chave a ser deletada existe de fato
-        beq $v0, -1, remove_fail   # chave n?o encontrada
+        beq $v0, -1, remove_fail   # chave nao encontrada
 
         # setup para a recursao
         la $a1, chave                   # a1 = input
@@ -365,25 +445,26 @@
             syscall
 
             li $v0, 4                   # imprimir string
-            la $a0, chave               # imprimir a chave
+            la $a0, str_path_not_found     # imprimir a chave
             syscall
 
+            jal print_path            # imprimir caminho percorrido
             j remove               # voltar e pedir nova chave
 
         remove_recursion:
-            #t0 = recebe de $a1 o byte da chave de entrada (input do usuario)
-            #t1 = '0'
-            #t2 = '1'
-            #t4 = '\n'
-            #a0 = auxiliar para descer na recursao
-            #a1 = input string
-            #v0 = endereco do noh sendo processado
+            # t0 = recebe de $a1 o byte da chave de entrada (input do usuario)
+            # t1 = '0'
+            # t2 = '1'
+            # t4 = '\n'
+            # a0 = auxiliar para descer na recursao
+            # a1 = input string
+            # v0 = endereco do noh sendo processado
             remove_recursion_loop:
-                #push da recursao
+                # push da recursao
                 sw $v0, 0($sp)
                 sw $ra, -4($sp)
                 addi $sp, $sp, -8
-                #jump para os casos
+                # jump para os casos
                 beq $t0, $t1, remove_zero
                 beq $t0, $t2, remove_one
                 beq $t0, $t4, remove_last  # caso base, quando $t0 = \n
@@ -410,58 +491,69 @@
                 lb $t5, 8($v0)                  # load da flag para verificar se ? noh terminal ou n?o
 
                 # caso ele tenha dois filhos ou seja um noh terminal, a recursao acaba
-                bnez $t5, remove_end_recursion         # eh noh terminal
+                bnez $t5, end_recursion         # eh noh terminal
                 add $t5, $t6, $t7               # $t5 = fesq + fdir
-                # se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
+                #se $t5 for igual a $t6 ou $t7 ele soh tem um filho, se nao ele tem 2 filhos
                 beq $t5, $t6, remove_next
                 beq $t5, $t7, remove_next
 
-            remove_end_recursion:
+            end_recursion:
                 addi $sp, $sp, -8
                 j remove_assign_null
 
             remove_next:
-                lw $ra, 4($sp)                    # pop da pilha
+                lw $ra, 4($sp)                    #pop da pilha
                 lw $v0, 8($sp)
                 beq $s5, $v0, remove_assign_null  # se for a raiz a recursao acaba
                 addi, $sp, $sp, 8
                 jr $ra
 
             remove_last:
-            sb $zero, 8($v0)                  # setando a flag de terminal para 0
-            lw $t6, 0($v0)                    # $t6 recebe o endereco do filho a esquerda
-            lw $t7, 4($v0)                    # $t7 recebe o endereco do filho a direita
-            sub $t6, $t6, $t7                 # checando se o ultimo noh tem algum filho
-            bnez $t6, remove_end              # o ultimo noh tem filhos
-            addi $sp, $sp, 8                  # ignorando a etapa de recursao do ultimo noh
-            lw $v0, 8($sp)                    # checando se eh a raiz (chave de 1 digito)
-            beq $v0, $s5, remove_assign_null
-            j remove_next                     # retornando na recursao
+                sb $zero, 8($v0)                  # setando a flag de terminal para 0
+                lw $t6, 0($v0)                    # $t6 recebe o endereco do filho a esquerda
+                lw $t7, 4($v0)                    # $t7 recebe o endereco do filho a direita
+                sub $t6, $t6, $t7                 # checando se o ultimo noh tem algum filho
+                bnez $t6, remove_end              # o ultimo noh tem filhos
+                addi $sp, $sp, 8                  # ignorando a etapa de recursao do ultimo noh
+                lw $v0, 8($sp)                    # checando se eh a raiz (chave de 1 digito)
+                beq $v0, $s5, remove_assign_null
+                j remove_next                # retornando na recursao
 
             # caso um dos filhos do noh tenha de ser atribuido null
             remove_assign_null:
-            lw $t6, 0($v0)                    # filho a esquerda
-            lw $t7, 4($v0)                    # filho a direita
-            lw $t3, 0($sp)                    # de onde veio na recursao
-            beq $t3, $t6, remove_assign_null_left
-            beq $t3, $t7, remove_assign_null_right
+                lw $t6, 0($v0)                    # filho a esquerda
+                lw $t7, 4($v0)                    # filho a direita
+                lw $t3, 0($sp)                    # de onde veio na recursao
+                beq $t3, $t6, remove_assign_null_left
+                beq $t3, $t7, remove_assign_null_right
 
             remove_assign_null_left:
-            sw $zero, 0($v0)
-            j remove_end
+                sw $zero, 0($v0)
+                j remove_end
 
             remove_assign_null_right:
-            sw $zero, 4($v0)
+                sw $zero, 4($v0)
 
             # a remocao termina
             remove_end:
-            move $sp, $s7         # voltando stack pointer na posicao inicial
-            lw $ra, -4($sp)       # carregando endereco para sair da funcao de remover
-            li $v0, 4             # imprimir string
-            la $a0, str_removed   # imprimir que chave nao foi encontrada
-            syscall
+                move $sp, $s7         # voltando stack pointer na posicao inicial
+                lw $ra, -4($sp)       # carregando endereco para sair da funcao de remover
 
-            j remove
+                li $v0, 4             # imprimir string
+                la $a0, str_found   # imprimir que chave foi encontrada
+                syscall
+
+                li $v0, 4                       # imprimir string
+                la $a0, chave                   # imprimir a chave
+                syscall
+
+                jal print_path
+
+                li $v0, 4                       # imprimir string
+                la $a0, str_removed
+                syscall
+
+                j remove
 
 
     # +--------------+
@@ -774,10 +866,15 @@
         li $t4, 10         # \n em ASCII
         la $a1, chave      # carregar endereco de chave em $a1
 
+        # checar se primeiro (e único) caractere é '\n'
+        lb $t0, 0($a1)
+        beq $t0, $t4, check_input_error
+
         check_input_loop:
             # Carregar valor de endereco em a1 e colocar em $t0
             lb $t0, 0($a1)
             # Verificar se bit atual eh 0, 1
+
             beq $t0, $t1, check_input_continue      # checa se eh 0
             beq $t0, $t2, check_input_continue      # checa se eh 1
             beq $t0, $t3, check_input_minus       # checa se eh -
