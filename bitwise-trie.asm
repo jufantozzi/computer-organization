@@ -73,7 +73,7 @@
     str_vis_n: .asciiz "N"
     str_vis_space: .asciiz " "
     str_vis_p1: .asciiz "("
-    str_vis_p2: .asciiz ")\n"
+    str_vis_p2: .asciiz ")"
 
     srt_vis_info_t: .asciiz "T"
     str_vis_info_nt: .asciiz "NT"
@@ -88,7 +88,6 @@
 
     str_vis_comma: .asciiz ", "
     str_vis_nl: .asciiz "\n"
-	str_vis_db: .asciiz "REMOVI O SENTINELA"
     # Input
     chave: .space 16 # 16 digitos = 16 bytes
 
@@ -142,7 +141,7 @@
     # | INSERCAO |
     # +----------+
     insert_node_repeat:
-    	li $v0, 4                  # imprimir string
+    	li $v0, 4                   # imprimir string
         la $a0, str_duplicated
         syscall
 
@@ -466,6 +465,7 @@
 
             j remove_node
 
+
     # +--------------+
     # | VISUALIZACAO |
     # +--------------+
@@ -496,35 +496,35 @@
 
         # adicionando elemento sentinela na fila para contar os niveis da arvore
         add $a0, $t5, $zero
-        li $a1, 0             # endereco null sera colocado nesta sentinela
-        li $a2, 0             # ignorar digito do sentinela
+        li $a1, 0 # endereco null sera colocado nesta sentinela
+        li $a2, 0 # ignorar digito do sentinela
         jal enqueue
-		    move $t5, $v0         # armazena o primeiro elemento da fila
-        move $a3, $v0         # $a3 recebe o endereco do sentinela
+		move $t5, $v0 # armazena o primeiro elemento da fila
+        move $a3, $v0 # $a3 recebe o endereco do sentinela
 
         # imprimindo informacoes da raiz
         # "N0 (raiz, NT, &esq, &dir) \n"
-        li $v0, 4             # imprimir string "N"
+        li $v0, 4 # imprimir string "N"
         la $a0, str_vis_n
         syscall
 
-        li $v0, 1             # imprimir 0 (nivel da raiz)
+        li $v0, 1 #imprimir 0 (nivel da raiz)
         add $a0, $t2, $zero
         syscall
 
-        li $v0, 4             # imprimir string " "
+        li $v0, 4 # imprimir string " "
         la $a0, str_vis_space
         syscall
 
-        li $v0, 4             # imprimir string "("
+        li $v0, 4 # imprimir string "("
         la $a0, str_vis_p1
         syscall
 
-        li $v0, 4             # imprimir string "raiz"
+        li $v0, 4 # imprimir string "raiz"
         la $a0, str_vis_root
         syscall
 
-        li $v0, 4             # imprimir string ", NT"
+        li $v0, 4 # imprimir string ", NT"
         la $a0, str_vis_nt
         syscall
 
@@ -544,11 +544,11 @@
         # imprime o endereco do filho a esquerda
         # adiciona o filho a esquerda na fila
         vis_print_left:
-            li $v0, 4             # imprimir string ", "
+            li $v0, 4 # imprimir string ", "
             la $a0, str_vis_comma
             syscall
 
-            li $v0, 1             # imprimir o endereco do filho a esquerda
+            li $v0, 1 # imprimir o endereco do filho a esquerda
             add $a0, $t1, $zero
             syscall
 
@@ -557,18 +557,18 @@
             add $a1, $t1, $zero
             li $a2, 0
             jal enqueue
-            add $t5, $v0, $zero   #novo endereco da cabeca da fila
+            add $t5, $v0, $zero #novo endereco da cabeca da fila
 
             j vis_check_right
 
         # imprime o endereco do filho a direita
         # adiciona o filho a direita na fila
         vis_print_right:
-            li $v0, 4             # imprimir string ", "
+            li $v0, 4 # imprimir string ", "
             la $a0, str_vis_comma
             syscall
 
-            li $v0, 1             # imprimir o endereco do filho a direita
+            li $v0, 1 # imprimir o endereco do filho a direita
             add $a0, $t1, $zero
             syscall
 
@@ -577,66 +577,76 @@
             add $a1, $t1, $zero
             li $a2, 1
             jal enqueue
-            add $t5, $v0, $zero   #novo endereco da cabeca da fila
+            add $t5, $v0, $zero #novo endereco da cabeca da fila
 
             j vis_next_node
 
         vis_print_null:
-            li $v0, 4             # imprimir string ", null"
+            li $v0, 4 # imprimir string ", null"
             la $a0, str_vis_null
             syscall
             jr $ra
 
         # checa se a fila esta vazia, caso contrario imprime o proximo noh
         vis_next_node:
-            li $v0, 4             # imprimir string ") "
+            li $v0, 4 # imprimir string ") "
             la $a0, str_vis_p2
             syscall
 
             vis_next_dequeue:
                 # pega o proximo endereco da fila
-                add $a0, $t5, $zero             # $a0 recebe a cabeca da fila
+                add $a0, $t5, $zero # $a0 recebe a cabeca da fila
                 jal dequeue
-                add, $t5, $v1, $zero            # nova cabeca da fila
-                add, $t3, $v0, $zero            # elemento removido da fila
+                add, $t5, $v1, $zero # nova cabeca da fila
+                add, $t3, $v0, $zero # elemento removido da fila
 
-
-                beq $t3, $a3, vis_next_level    # checando se o elemento removido eh o elemento sentinela
-                lw $t0, 0($t3)                  # $t0 recebe endereco do noh checado (que estava armazenado na estrutura da fila)
-                lw $t4, 4($t3)                  # $t4 recebe o digito do noh checado
+                # checando se o elemento removido eh o elemento sentinela
+                beq $t3, $a3, vis_next_level
+                # $t0 recebe endereco do noh checado (que estava armazenado na estrutura da fila)
+                lw $t0, 0($t3)
+                # $t4 recebe o digito do noh checado
+                lw $t4, 4($t3)
+				j vis_print_node_info
 
                 vis_next_level:
-					          li $v0, 4                   # imprimir string "REMOVI O SENTINELA"
-                    la $a0, str_vis_db
-                    syscall
 
-                    li $v0, 4                   # imprimir string "\n"
+                    li $v0, 4 # imprimir string "\n"
                     la $a0, str_vis_nl
                     syscall
 
                     # checando se a fila esta vazia
                     move $a0, $t5
                     jal queue_empty
-                    beqz $v0, menu              # TERMINA A VISUALIZACAO DA ARVORE
+                    beqz $v0, menu # TERMINA A VISUALIZACAO DA ARVORE
+
+					# remove o elemento da fila para ser o proximo a ser checado
+					jal dequeue
+					add, $t5, $v1, $zero # nova cabeca da fila
+					add, $t3, $v0, $zero # elemento removido da fila
+					# $t0 recebe endereco do noh checado (que estava armazenado na estrutura da fila)
+					lw $t0, 0($t3)
+					# $t4 recebe o digito do noh checado
+					lw $t4, 4($t3)
 
                     # adiciona outro sentinela caso nao tenha acabado a visualizacao
                     add $a0, $t5, $zero
-                    li $a1, 0                   # endereco null sera colocado nesta sentinela
+                    li $a1, 0 # endereco null sera colocado nesta sentinela
                     li $a2, 0
                     jal enqueue
-                    add $a3, $v0, $zero         # $a3 recebe o novo sentinela
+					add $t5, $v0, $zero
+                    add $a3, $v1, $zero # $a3 recebe o novo sentinela
 
                     # incrementa o contador de nivel e imprime informacao do novo nivel
                     addi $t2, $t2, 1
-                    li $v0, 4                   # imprimir string "N"
+                    li $v0, 4 # imprimir string "N"
                     la $a0, str_vis_n
                     syscall
 
-                    li $v0, 1                   #imprimir nivel da arvore
+                    li $v0, 1 #imprimir nivel da arvore
                     add $a0, $t2, $zero
                     syscall
 
-                    li $v0, 4                   # imprimir string " "
+                    li $v0, 4 # imprimir string " "
                     la $a0, str_vis_space
                     syscall
 
@@ -644,11 +654,12 @@
             # imprimindo informacoes do noh
             # "(0 ou 1, NT, &esq, &dir) "
 
-            li $v0, 4                 # imprimir string "("
+            li $v0, 4 # imprimir string "("
             la $a0, str_vis_p1
             syscall
 
-            bnez $t4, vis_print_one   # imprimir string "0" ou "1"
+            # imprimir string "0" ou "1"
+            bnez $t4, vis_print_one
 
             vis_print_zero:
                 li $v0, 1
@@ -671,14 +682,13 @@
                 la $a0, str_vis_nt
                 syscall
                 j vis_check_left
-
             vis_print_T:
                 li $v0, 4
                 la $a0, str_vis_t
                 syscall
                 j vis_check_left
 
-
+                
     # Funcoes auxiliares
     # +--------------+
     # |    FILA      |
@@ -703,18 +713,20 @@
         move $v0, $a0
         jr $ra
 
+
     # $a0 tem o primeiro elemento da fila
     # $a1 tem o endereco do noh a ser armazenado
     # $a2 tem o valor do digito daquele noh
     # $v0 ira retornar o endereco da cabeca da fila
+	# $v1 ira retornar o endereco do elemento inserido na fila
     enqueue:
         # aloca memoria para um novo noh
-        add $t6, $a0, $zero           # salvando primeiro elemento da fila em $t6
+        add $t6, $a0, $zero # salvando primeiro elemento da fila em $t6
 
-        li $v0, 9                     # alocando memoria para um novo elemento na fila
+        li $v0, 9 # alocando memoria para um novo elemento na fila
         li $a0, 12
         syscall
-
+		move $v1, $v0 # salvando endereco da nova estrutura
         # adicionando informacoes na nova estrutura
         sw $a1, 0($v0)
         sw $a2, 4($v0)
@@ -722,32 +734,29 @@
 
         # percorrendo a fila ate o ultimo noh
         # adicionando a referencia para o novo noh alocado
-        beqz $t6, enqueue_empty           # fila vazia
-        add $a0, $t6, $zero               # $a0 recebe o endereco da cabeca da fila
+        beqz $t6, enqueue_empty    # fila vazia
+        add $a0, $t6, $zero # $a0 recebe o endereco da cabeca da fila
 
         enqueue_loop:
-            lw $t7, 8($a0)                # endereco do antecessor deste elemento na fila
-            beqz $t7, enqueue_end_loop    # caso nao haja antecessor, insira elemento
-            move $a0, $t7                 # vai para o proximo elemento da fila
+            lw $t7, 8($a0) # endereco do antecessor deste elemento na fila
+            beqz $t7, enqueue_end_loop # caso nao haja antecessor, insira elemento
+            move $a0, $t7 # vai para o proximo elemento da fila
             j enqueue_loop
-
         enqueue_end_loop:
-            sw $v0, 8($a0)                # novo elemento inserido na fila
-            add $v0, $t6, $zero           # $v0 recebe a referencia para a cabeca da fila
-
+            sw $v0, 8($a0)    # novo elemento inserido na fila
+            add $v0, $t6, $zero # $v0 recebe a referencia para a cabeca da fila
         enqueue_empty:
-            jr $ra                        # termina a insercao
+            jr $ra # termina a insercao
 
     # $a0 tem o primeiro elemento da fila
     # $v0 ira retornar o endereco do elemento removido da fila, null caso a fila esteja vazia
     # $v1 ira retornar o endereco da nova cabeca da fila, null caso a fila esteja vazia
     # lembrar de desalocar 12 bytes da estrutura retornada em $v0, caso desejar
     dequeue:
-        beqz $a0, dequeue_empty           # fila vazia
-        add $v0, $a0, $zero               # $v0 recebe o elemento na cabeca da fila
-        lw $v1 8($a0)                     # $v1 tem a referencia do proximo elemento, a nova cabeca da fila
+        beqz $a0, dequeue_empty # fila vazia
+        add $v0, $a0, $zero # $v0 recebe o elemento na cabeca da fila
+        lw $v1 8($a0) # $v1 tem a referencia do proximo elemento, a nova cabeca da fila
         jr $ra
-
         dequeue_empty:
             li $v0, 0
             li $v1, 0
