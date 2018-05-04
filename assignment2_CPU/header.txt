@@ -1,0 +1,11 @@
+SSC-0112 - Organizacao de Computadores Digitais
+Turma A - 2018/01
+Prof. Paulo Sergio Lopes de Souza
+
+CPU MIPS Multiciclo de 32 bits
+
+Alunos:
+    Felipe Scrochio Custodio     - 9442688
+    Gabriel Henrique Scalici     - 9292970
+    Juliano Fantozzi             - 9791218
+    Andre Luis Storino Junior    - 9293668
