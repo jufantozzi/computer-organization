@@ -92,6 +92,11 @@ char MemParaReg1;    // 18
 // +---------------------+
 // | UNIDADES FUNCIONAIS |
 // +---------------------+
+
+/**
+ * funcao()
+ * Descricao
+ */
 void PC() {
     /* code */
 }
@@ -101,6 +106,11 @@ void PC() {
 // +----------------------------------+
 // | FUNÇÕES - BANCO DE REGISTRADORES |
 // +----------------------------------+
+
+/**
+ * funcao()
+ * Descricao
+ */
 char* select_reg(int id) {
     char* name = NULL;
     switch (id) {
@@ -203,11 +213,18 @@ char* select_reg(int id) {
     }
 }
 
-
+/**
+ * funcao()
+ * Descricao
+ */
 void write_reg() {
 
 }
 
+/**
+ * funcao()
+ * Descricao
+ */
 void read_reg() {
 
 }
@@ -217,10 +234,20 @@ void read_reg() {
 // +-------------------+
 // | FUNÇÕES - MEMÓRIA |
 // +-------------------+
+
+/**
+ * funcao()
+ * Descricao
+ */
 void write_mem() {
 
 }
 
+
+/**
+ * funcao()
+ * Descricao
+ */
 void read_mem() {
 
 }
