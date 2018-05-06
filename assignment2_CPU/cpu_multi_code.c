@@ -11,6 +11,7 @@
 /* Juliano Fantozzi               9791218          */
 /* Andre Luis Storino Junior      9293668          */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 
@@ -27,39 +28,39 @@ char MEMORY[MAX_SIZE];
 // +------------------------+
 // | BANCO DE REGISTRADORES |
 // +------------------------+
-typedef char register[32];
-register zero;  // 0
-register at;    // 1
-register v0;    // 2
-register v1;    // 3
-register a0;    // 4
-register a1;    // 5
-register a2;    // 6
-register a3;    // 7
-register t0;    // 8
-register t1;    // 9
-register t2;    // 10
-register t3;    // 11
-register t4;    // 12
-register t5;    // 13
-register t6;    // 14
-register t7;    // 15
-register s0;    // 16
-register s1;    // 17
-register s2;    // 18
-register s3;    // 19
-register s4;    // 20
-register s5;    // 21
-register s6;    // 22
-register s7;    // 23
-register t8;    // 24
-register t9;    // 25
-register k0;    // 26
-register k1;    // 27
-register gp;    // 28
-register sp;    // 29
-register fp;    // 30
-register ra;    // 31
+typedef char reg[32];
+reg zero;  // 0
+reg at;    // 1
+reg v0;    // 2
+reg v1;    // 3
+reg a0;    // 4
+reg a1;    // 5
+reg a2;    // 6
+reg a3;    // 7
+reg t0;    // 8
+reg t1;    // 9
+reg t2;    // 10
+reg t3;    // 11
+reg t4;    // 12
+reg t5;    // 13
+reg t6;    // 14
+reg t7;    // 15
+reg s0;    // 16
+reg s1;    // 17
+reg s2;    // 18
+reg s3;    // 19
+reg s4;    // 20
+reg s5;    // 21
+reg s6;    // 22
+reg s7;    // 23
+reg t8;    // 24
+reg t9;    // 25
+reg k0;    // 26
+reg k1;    // 27
+reg gp;    // 28
+reg sp;    // 29
+reg fp;    // 30
+reg ra;    // 31
 
 /*******************************************************/
 
@@ -88,107 +89,6 @@ char MemParaReg1;    // 18
 
 /*******************************************************/
 
-// +--------------------+
-// | FUNÇÕES AUXILIARES |
-// +--------------------+
-
-/**
- * bin2dec(int binary)
- * Converte 'binary', número em binário,
- * para decimal e retorna.
- */
-void bin2dec(int binary) {
-    int dec;
-    while (binary > 0) {
-        rem = binary % 10;
-        dec = dec + rem * base;
-        binary = binary / 10 ;
-        base = base * 2;
-    }
-    return dec;
-}
-
-/**
- * initialize()
- * Inicializa todos os sinais de controle,
- * memória e registradores
- */
-void initialize() {
-    int i;
-
-    // inicializar sinais de controle
-    RegDst0 = 0
-    RegDst1 = 0
-    EscReg = 0
-    UALFonteA = 0
-    UALFonteB0 = 0
-    UALFonteB1 = 0
-    UALOp0 = 0
-    UALOp1 = 0
-    FontePC0 = 0
-    FontePC1 = 0
-    PCEscCond = 0
-    PCEsc = 0
-    IouD = 0
-    LerMem = 0
-    EscMem = 0
-    BNE = 0
-    IREsc = 0
-    MemParaReg0 = 0
-    MemParaReg1 = 0
-
-    // inicializar memória
-    for (i = 0; i < MAX_SIZE; i++) {
-        MEMORY[i] = 0;
-    }
-
-    // inicializar banco de registradores
-    for (i = 0; i < 32; i++) {
-        zero[i] = 0
-        at[i] = 0
-        v0[i] = 0
-        v1[i] = 0
-        a0[i] = 0
-        a1[i] = 0
-        a2[i] = 0
-        a3[i] = 0
-        t0[i] = 0
-        t1[i] = 0
-        t2[i] = 0
-        t3[i] = 0
-        t4[i] = 0
-        t5[i] = 0
-        t6[i] = 0
-        t7[i] = 0
-        s0[i] = 0
-        s1[i] = 0
-        s2[i] = 0
-        s3[i] = 0
-        s4[i] = 0
-        s5[i] = 0
-        s6[i] = 0
-        s7[i] = 0
-        t8[i] = 0
-        t9[i] = 0
-        k0[i] = 0
-        k1[i] = 0
-        gp[i] = 0
-        sp[i] = 0
-        fp[i] = 0
-        ra[i] = 0
-    }
-}
-
-/**
- * decode()
- * Processo de decodificação de uma instrução
- */
-void decode() {
-
-}
-
-/*******************************************************/
-
 // +---------------------+
 // | UNIDADES FUNCIONAIS |
 // +---------------------+
@@ -198,107 +98,107 @@ void PC() {
 
 /*******************************************************/
 
-
 // +----------------------------------+
 // | FUNÇÕES - BANCO DE REGISTRADORES |
 // +----------------------------------+
-void select_reg(int id) {
+char* select_reg(int id) {
+    char* name = NULL;
     switch (id) {
         case 0:
-            // reg
+            return "$zero";
             break;
         case 1:
-            // reg
+            return "$at";
             break;
         case 2:
-            // reg'
+            return "$v0";
             break;
         case 3:
-            // reg'
+            return "$v1";
             break;
         case 4:
-            // reg'
+            return "$a0";
             break;
         case 5:
-            // reg'
+            return "$a1";
             break;
         case 6:
-            // reg'
+            return "$a2";
             break;
         case 7:
-            // reg'
+            return "$a3";
             break;
         case 8:
-            // reg'
+            return "$t0";
             break;
         case 9:
-            // reg'
+            return "$t1";
             break;
         case 10:
-            // reg'
+            return "$t2";
             break;
         case 11:
-            // reg'
+            return "$t3";
             break;
         case 12:
-            // reg'
+            return "$t4";
             break;
         case 13:
-            // reg'
+            return "$t5";
             break;
         case 14:
-            // reg'
+            return "$t6";
             break;
         case 15:
-            // reg'
+            return "$t7";
             break;
         case 16:
-            // reg'
+            return "$s0";
             break;
         case 17:
-            // reg'
+            return "$s1";
             break;
         case 18:
-            // reg'
+            return "$s2";
             break;
         case 19:
-            // reg'
+            return "$s3";
             break;
         case 20:
-            // reg'
+            return "$s4";
             break;
         case 21:
-            // reg'
+            return "$s5";
             break;
         case 22:
-            // reg'
+            return "$s6";
             break;
         case 23:
-            // reg'
+            return "$s7";
             break;
         case 24:
-            // reg'
+            return "$t8";
             break;
         case 25:
-            // reg'
+            return "$t9";
             break;
         case 26:
-            // reg'
+            return "$k0";
             break;
         case 27:
-            // reg'
+            return "$k1";
             break;
         case 28:
-            // reg'
+            return "$gp";
             break;
         case 29:
-            // reg'
+            return "$sp";
             break;
         case 30:
-            // reg'
+            return "$fp";
             break;
         case 31:
-            // reg'
+            return "$ra";
             break;
     }
 }
@@ -327,27 +227,156 @@ void read_mem() {
 
 /*******************************************************/
 
+// +--------------------+
+// | FUNÇÕES AUXILIARES |
+// +--------------------+
+
+/**
+ * initialize()
+ * Inicializa todos os sinais de controle,
+ * memória e registradores
+ */
+void initialize() {
+    int i;
+
+    // inicializar sinais de controle
+    RegDst0 = 0;
+    RegDst1 = 0;
+    EscReg = 0;
+    UALFonteA = 0;
+    UALFonteB0 = 0;
+    UALFonteB1 = 0;
+    UALOp0 = 0;
+    UALOp1 = 0;
+    FontePC0 = 0;
+    FontePC1 = 0;
+    PCEscCond = 0;
+    PCEsc = 0;
+    IouD = 0;
+    LerMem = 0;
+    EscMem = 0;
+    BNE = 0;
+    IREsc = 0;
+    MemParaReg0 = 0;
+    MemParaReg1 = 0;
+
+    // inicializar memória
+    for (i = 0; i < MAX_SIZE; i++) {
+        MEMORY[i] = 0;
+    }
+
+    // inicializar banco de registradores
+    for (i = 0; i < 32; i++) {
+        // registerBank[i][j] = 0
+        zero[i] = 0;
+        at[i] = 0;
+        v0[i] = 0;
+        v1[i] = 0;
+        a0[i] = 0;
+        a1[i] = 0;
+        a2[i] = 0;
+        a3[i] = 0;
+        t0[i] = 0;
+        t1[i] = 0;
+        t2[i] = 0;
+        t3[i] = 0;
+        t4[i] = 0;
+        t5[i] = 0;
+        t6[i] = 0;
+        t7[i] = 0;
+        s0[i] = 0;
+        s1[i] = 0;
+        s2[i] = 0;
+        s3[i] = 0;
+        s4[i] = 0;
+        s5[i] = 0;
+        s6[i] = 0;
+        s7[i] = 0;
+        t8[i] = 0;
+        t9[i] = 0;
+        k0[i] = 0;
+        k1[i] = 0;
+        gp[i] = 0;
+        sp[i] = 0;
+        fp[i] = 0;
+        ra[i] = 0;
+    }
+}
+
+
+void finalize() {
+    int i;
+    char* regid = NULL; // identificador do registrador (nome)
+    // imprimir todos os registradores temporários
+    for (i = 0; i < 32; i++) {
+        regid = select_reg(i);
+        printf("%s:\t%d\n", regid, i);
+    }
+    // t0
+    // t1
+    // t2
+    // t3
+    // t4
+    // t5
+    // t6
+    // t7
+    // t8
+    // t9
+    //
+    // s0
+    // s1
+    // s2
+    // s3
+    // s4
+    // s5
+    // s6
+    // s7
+
+    // imprimir as 32 primeiras posições de memória
+    for (int i = 0; i < 32; i++) {
+        printf("MEMORIA[%d] = %d\n", i, MEMORY[i]);
+    }
+
+}
+
+/*******************************************************/
+
 // +-----------+
 // | SIMULAÇÃO |
 // +-----------+
 int main(int argc, char const *argv[]) {
 
     char instruction[32];
+    const char* source = NULL;
+
+    // verificar se código fonte foi passado como argumento
+    if (argc < 2) {
+        fprintf(stderr, "Código fonte não foi passado como argumento!\n");
+        exit(1);
+    }
+
+    // ler código fonte
+    source = argv[1];
+    FILE *bin = NULL;
+    bin = fopen(source, "r");
 
     // inicializar sinais
     initialize();
 
-    // ler código fonte
-    FILE *bin = NULL;
-    bin = fopen(argv[1], "r");
+    if (bin == NULL) {
+        printf("Código fonte não carregado.");
+        exit(0);
+    }
 
-    // ler instrução por instrução
+    /* CICLOS */
 
-    // – Enviar o PC para a memória e buscar a instrução.
-    // – Ler um ou dois registradores (usando o campo da instrução para selecionar os registradores a serem lidos)
-
+    // fechar código fonte
     fclose(bin);
     bin = NULL;
+
+    // finalizar a execução
+    // exibir os registradores e memória
+    finalize();
 
     return 0;
 }
