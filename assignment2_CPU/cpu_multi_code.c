@@ -115,14 +115,37 @@ void PC() {
  * funcao()
  * Descricao
  */
-void MUX_MEMORY() {
+void MEMORY() {
     /* code */
 }
 
 
 /**
  * funcao()
- * Descricao
+ * SINAL DE CONTROLE: IORD
+ * 0 - PEGA O VALOR DE PC
+ * 1 - PEGA O VALOR DE ALUOUT
+ * SAIDA: PARA ADDRESS EM MEMORY
+ */
+void MUX_MEMORY( char IouD) {
+    /* code */
+    switch (IouD) {
+      case 0:
+        break;
+      case 1:
+        break;
+    }
+}
+
+
+/**
+ * funcao()
+ * SINAL DE CONTROLE: REGDEST0 E REGDEST1
+ * 0 - PEGA O VALOR DE INTRUCTION[20 .. 16]
+ * 1 - PEGA O VALOR DE INTRUCTION[15 .. 11]
+ * 2 - PEGA O VALOR 31 (NUMÉRICO)
+ * 3 - NÃO EXISTE
+ * SAIDA: PARA WRITE REGISTER (REGISTERS)
  */
 void MUX_WRITE_REG() {
     /* code */
@@ -131,7 +154,12 @@ void MUX_WRITE_REG() {
 
 /**
  * funcao()
- * Descricao
+ * SINAL DE CONTROLE: MEMTOREG0 E MEMTOREG1
+ * 0 - PEGA O VALOR DE ALUOUT
+ * 1 - PEGA O VALOR DE MEM_DATA_REGISTER
+ * 2 - PEGA O VALOR DE PC
+ * 3 - NÃO EXISTE
+ * SAIDA: PARA WRITE DATA (REGISTERS)
  */
 void MUX_WRITE_DATA() {
     /* code */
@@ -140,7 +168,10 @@ void MUX_WRITE_DATA() {
 
 /**
  * funcao()
- * Descricao
+ * SINAL DE CONTROLE: ALUSRCA
+ * 0 - PEGA O VALOR DE PC
+ * 1 - PEGA O VALOR DE A (READ DATA 1 - REGISTERS)
+ * SAIDA: ENTRADA 1 DA ALU
  */
 void MUX_ALU_1() {
     /* code */
@@ -149,7 +180,12 @@ void MUX_ALU_1() {
 
 /**
  * funcao()
- * Descricao
+ * SINAL DE CONTROLE: ALUSRCB0 E ALUSRCB1
+ * 0 - PEGA O VALOR DE B (READ DATA 2 - REGISTERS)
+ * 1 - PEGA O VALOR 4 (NÚMERO)
+ * 2 - PEGA O VALOR DE INSTRUCTION[15 .. 0] (DEPOIS DE SIGNAL_EXTEND_16_TO_32)
+ * 3 - PEGA O VALOR DE INSTRUCTION[15 .. 0] (DEPOIS DE SIGNAL_EXTEND_16_TO_32 E SHIFT_LEFT_2_MUX_ALU_2)
+ * SAIDA: ENTRADA 2 DA ALU
  */
 void MUX_ALU_2() {
     /* code */
@@ -157,7 +193,12 @@ void MUX_ALU_2() {
 
 /**
  * funcao()
- * Descricao
+ * SINAL DE CONTROLE: PCSORCE0 E PCSOURCE1
+ * 0 - PEGA O VALOR DE RESULTADO DA ULA
+ * 1 - PEGA O VALOR DE ALUOUT
+ * 2 - PEGA O VALOR DE PC SHIFT 2 LEFT
+ * 3 - PEGA O VALOR DE A (REGISTRADORES)
+ * SAIDA: PARA PC
  */
 void MUX_PC() {
     /* code */
@@ -170,6 +211,80 @@ void MUX_PC() {
 void MUX_BNE() {
     /* code */
 }
+
+/**
+ * funcao()
+ * Descricao
+ */
+void INSTRUCTIONS_REGISTERS() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MEM_DATA_REGISTER() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void REGISTERS() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void SIGNAL_EXTEND_16_TO_32() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void SHIFT_LEFT_2_PC() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void SHIFT_LEFT_2_MUX_ALU_2() {
+    /* code */
+}
+
+
+/**
+ * funcao()
+ * Descricao
+ */
+void ALU_CONTROL() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void ALU() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void CONTROL() {
+    /* code */
+}
+
 
 
 /*******************************************************/
