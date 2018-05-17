@@ -15,6 +15,9 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define DEBUG 1
+#define IF_DEBUG if(DEBUG)
+
 /*******************************************************/
 
 // Decisões de projeto
@@ -77,25 +80,25 @@ reg ra;    // 31
 // +--------------------+
 // | SINAIS DE CONTROLE |
 // +--------------------+
-char RegDst0;        // 00
-char RegDst1;        // 01
-char EscReg;         // 02
-char UALFonteA;      // 03
-char UALFonteB0;     // 04
-char UALFonteB1;     // 05
-char UALOp0;         // 06
-char UALOp1;         // 07
-char FontePC0;       // 08
-char FontePC1;       // 09
-char PCEscCond;      // 10
-char PCEsc;          // 11
-char IouD;           // 12
-char LerMem;         // 13
-char EscMem;         // 14
-char BNE;            // 15
-char IREsc;          // 16
-char MemParaReg0;    // 17
-char MemParaReg1;    // 18
+char RegDst0;       // 00
+char RegDst1;       // 01
+char RegWrite;      // 02
+char ALUSrcA;       // 03
+char ALUSrcB0;      // 04
+char ALUSrcB1;      // 05
+char ALUOp0;        // 06
+char ALUOp1;        // 07
+char PCSource0;     // 08
+char PCSource1;     // 09
+char PCWriteCond;   // 10
+char PCWrite;       // 11
+char IorD;          // 12
+char MemRead;       // 13
+char MemWrite;      // 14
+char BNE;           // 15
+char IRWrite;       // 16
+char MemtoReg0;     // 17
+char MemtoReg1;     // 18
 
 /*******************************************************/
 
@@ -115,10 +118,9 @@ void PC() {
  * funcao()
  * Descricao
  */
-void MEMORY() {
+void MEMORY_BANK() {
     /* code */
 }
-
 
 /**
  * funcao()
@@ -127,9 +129,9 @@ void MEMORY() {
  * 1 - PEGA O VALOR DE ALUOUT
  * SAIDA: PARA ADDRESS EM MEMORY
  */
-void MUX_MEMORY( char IouD) {
+void MUX_MEMORY() {
     /* code */
-    switch (IouD) {
+    switch (IorD) {
       case 0:
         break;
       case 1:
@@ -141,8 +143,8 @@ void MUX_MEMORY( char IouD) {
 /**
  * funcao()
  * SINAL DE CONTROLE: REGDEST0 E REGDEST1
- * 0 - PEGA O VALOR DE INTRUCTION[20 .. 16]
- * 1 - PEGA O VALOR DE INTRUCTION[15 .. 11]
+ * 0 - PEGA O VALOR DE INSTRUCTION[20 .. 16]
+ * 1 - PEGA O VALOR DE INSTRUCTION[15 .. 11]
  * 2 - PEGA O VALOR 31 (NUMÉRICO)
  * 3 - NÃO EXISTE
  * SAIDA: PARA WRITE REGISTER (REGISTERS)
@@ -232,7 +234,7 @@ void MEM_DATA_REGISTER() {
  * funcao()
  * Descricao
  */
-void REGISTERS() {
+void REGISTER_BANK() {
     /* code */
 }
 
@@ -285,8 +287,6 @@ void CONTROL() {
     /* code */
 }
 
-
-
 /*******************************************************/
 
 // +----------------------------------+
@@ -297,7 +297,7 @@ void CONTROL() {
  * funcao()
  * Descricao
  */
-char* select_reg(int id) {
+char* register_name(int id) {
     char* name = NULL;
     switch (id) {
         case 0:
@@ -397,7 +397,118 @@ char* select_reg(int id) {
             return "$ra";
             break;
     }
+    printf("ERRO: Registrador de número %d não encontrado.\n", id);
+    exit(0);
 }
+
+
+/**
+ * funcao()
+ * Descricao
+ */
+reg* get_register(int id) {
+    switch (id) {
+        case 0:
+            return &zero;
+            break;
+        case 1:
+            return &at;
+            break;
+        case 2:
+            return &v0;
+            break;
+        case 3:
+            return &v1;
+            break;
+        case 4:
+            return &a0;
+            break;
+        case 5:
+            return &a1;
+            break;
+        case 6:
+            return &a2;
+            break;
+        case 7:
+            return &a3;
+            break;
+        case 8:
+            return &t0;
+            break;
+        case 9:
+            return &t1;
+            break;
+        case 10:
+            return &t2;
+            break;
+        case 11:
+            return &t3;
+            break;
+        case 12:
+            return &t4;
+            break;
+        case 13:
+            return &t5;
+            break;
+        case 14:
+            return &t6;
+            break;
+        case 15:
+            return &t7;
+            break;
+        case 16:
+            return &s0;
+            break;
+        case 17:
+            return &s1;
+            break;
+        case 18:
+            return &s2;
+            break;
+        case 19:
+            return &s3;
+            break;
+        case 20:
+            return &s4;
+            break;
+        case 21:
+            return &s5;
+            break;
+        case 22:
+            return &s6;
+            break;
+        case 23:
+            return &s7;
+            break;
+        case 24:
+            return &t8;
+            break;
+        case 25:
+            return &t9;
+            break;
+        case 26:
+            return &k0;
+            break;
+        case 27:
+            return &k1;
+            break;
+        case 28:
+            return &gp;
+            break;
+        case 29:
+            return &sp;
+            break;
+        case 30:
+            return &fp;
+            break;
+        case 31:
+            return &ra;
+            break;
+    }
+    printf("ERRO: Registrador de número %d não encontrado.\n", id);
+    exit(0);
+}
+
 
 /**
  * funcao()
@@ -460,7 +571,6 @@ void read_mem() {
 
 /*******************************************************/
 
-
 // +--------------------+
 // | FUNÇÕES AUXILIARES |
 // +--------------------+
@@ -472,27 +582,28 @@ void read_mem() {
  */
 void initialize() {
     int i, j;
+    reg* current_reg = NULL;
 
     // inicializar sinais de controle
-    RegDst0 = 0;
-    RegDst1 = 0;
-    EscReg = 0;
-    UALFonteA = 0;
-    UALFonteB0 = 0;
-    UALFonteB1 = 0;
-    UALOp0 = 0;
-    UALOp1 = 0;
-    FontePC0 = 0;
-    FontePC1 = 0;
-    PCEscCond = 0;
-    PCEsc = 0;
-    IouD = 0;
-    LerMem = 0;
-    EscMem = 0;
-    BNE = 0;
-    IREsc = 0;
-    MemParaReg0 = 0;
-    MemParaReg1 = 0;
+    RegDst0     = 0;
+    RegDst1     = 0;
+    RegWrite    = 0;
+    ALUSrcA     = 0;
+    ALUSrcB0    = 0;
+    ALUSrcB1    = 0;
+    ALUOp0      = 0;
+    ALUOp1      = 0;
+    PCSource0   = 0;
+    PCSource1   = 0;
+    PCWriteCond = 0;
+    PCWrite     = 0;
+    IorD        = 0;
+    MemRead     = 0;
+    MemWrite    = 0;
+    BNE         = 0;
+    IRWrite     = 0;
+    MemtoReg0   = 0;
+    MemtoReg1   = 0;
 
     // inicializar memória
     memory_pointer = 0;
@@ -505,59 +616,44 @@ void initialize() {
 
     // inicializar banco de registradores
     for (i = 0; i < 32; i++) {
-        zero[i] = 0;
-        at[i] = 0;
-        v0[i] = 0;
-        v1[i] = 0;
-        a0[i] = 0;
-        a1[i] = 0;
-        a2[i] = 0;
-        a3[i] = 0;
-        t0[i] = 0;
-        t1[i] = 0;
-        t2[i] = 0;
-        t3[i] = 0;
-        t4[i] = 0;
-        t5[i] = 0;
-        t6[i] = 0;
-        t7[i] = 0;
-        s0[i] = 0;
-        s1[i] = 0;
-        s2[i] = 0;
-        s3[i] = 0;
-        s4[i] = 0;
-        s5[i] = 0;
-        s6[i] = 0;
-        s7[i] = 0;
-        t8[i] = 0;
-        t9[i] = 0;
-        k0[i] = 0;
-        k1[i] = 0;
-        gp[i] = 0;
-        sp[i] = 0;
-        fp[i] = 0;
-        ra[i] = 0;
+        current_reg = get_register(i);
+        for (j = 0; j < 32; j++) {
+            (*current_reg)[j] = 0;
+        }
     }
 }
-
 
 /**
  * funcao()
  * Descricao
  */
 void finalize() {
-    int i;
+    int i, j;
     char* regid = NULL; // identificador do registrador (nome)
+    reg* current_reg = NULL; // ponteiro para registrador
+
     // imprimir todos os registradores temporários
+    printf("\nREGISTRADORES:\n");
     for (i = 0; i < 32; i++) {
-        regid = select_reg(i);
-        printf("%s:\t%d\n", regid, i);
+        // imprimir nome do registrador
+        current_reg = get_register(i);
+        regid = register_name(i);
+        printf("%s:\t", regid);
+        // imprimir conteúdo do registrador
+        for (j = 0; j < 32; j++) {
+            printf("%d", (*current_reg)[j]);
+        }
+        printf("\n");
     }
 
+    printf("\nMEMÓRIA:\n");
     // imprimir as 32 primeiras posições de memória
-    for (int i = dynamic_mem_pointer; i < 32; i++) {
-        // mudar para for char a char
-        printf("MEMORIA[%d] = %s\n", i - dynamic_mem_pointer, MEMORY[i]);
+    for (i = dynamic_mem_pointer; i < dynamic_mem_pointer + 32; i++) {
+        printf("MEMORIA[%d] = \t", i - dynamic_mem_pointer);
+        for (j = 0; j < 32; j++) {
+            printf("%d", MEMORY[i][j]);
+        }
+        printf("\n");
     }
 }
 
@@ -587,13 +683,12 @@ int bin2dec(int n) {
 int main(int argc, char const *argv[]) {
 
     int i;
-
     char instruction[32];
     const char* source = NULL;
 
     // verificar se código fonte foi passado como argumento
     if (argc < 2) {
-        printf("Código fonte não foi passado como argumento!\n");
+        printf("ERRO: Código fonte não foi passado como argumento.\n");
         exit(1);
     }
 
@@ -607,7 +702,7 @@ int main(int argc, char const *argv[]) {
 
     // checar integridade do código fonte
     if (bin == NULL) {
-        printf("Código fonte não carregado.");
+        printf("ERRO: Código fonte não carregado.\n");
         exit(0);
     }
 
@@ -623,9 +718,9 @@ int main(int argc, char const *argv[]) {
     // memória dinâmica começa depois da memória de instruções
     dynamic_mem_pointer = memory_pointer;
 
+    IF_DEBUG printf("dynamic_mem_pointer = %d\n", dynamic_mem_pointer);
+
     /* CICLOS */
-
-
 
     // fechar código fonte
     fclose(bin);
