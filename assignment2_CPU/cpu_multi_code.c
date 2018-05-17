@@ -17,6 +17,12 @@
 
 /*******************************************************/
 
+// Decisões de projeto
+// - MUX possui como identificador a unidade funcional que ele dá a resposta
+// - MUX_IDENTIFICADOR
+
+/*******************************************************/
+
 // +---------+
 // | MEMÓRIA |
 // +---------+
@@ -105,9 +111,66 @@ void PC() {
     /* code */
 }
 
-void BcoReg() {
-
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_MEMORY() {
+    /* code */
 }
+
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_WRITE_REG() {
+    /* code */
+}
+
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_WRITE_DATA() {
+    /* code */
+}
+
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_ALU_1() {
+    /* code */
+}
+
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_ALU_2() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_PC() {
+    /* code */
+}
+
+/**
+ * funcao()
+ * Descricao
+ */
+void MUX_BNE() {
+    /* code */
+}
+
 
 /*******************************************************/
 
