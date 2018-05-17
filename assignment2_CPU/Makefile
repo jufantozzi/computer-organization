@@ -25,7 +25,7 @@ SRC = ./cpu_multi_code.c
 INCLUDES = .
 
 # compiler flags
-FLAGS = -g -std=c99 -pthread
+FLAGS = -g -std=c99 -pthread -lm
 
 all: compile
 
