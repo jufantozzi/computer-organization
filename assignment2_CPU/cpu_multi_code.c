@@ -13,7 +13,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 /*******************************************************/
 
@@ -21,7 +20,11 @@
 // | MEMÓRIA |
 // +---------+
 #define MAX_SIZE 100
-char MEMORY[MAX_SIZE];
+typedef char word[32];
+word MEMORY[MAX_SIZE];
+
+int dynamic_mem_pointer;
+int memory_pointer;
 
 /*******************************************************/
 
@@ -99,6 +102,10 @@ char MemParaReg1;    // 18
  */
 void PC() {
     /* code */
+}
+
+void BcoReg() {
+
 }
 
 /*******************************************************/
@@ -225,7 +232,7 @@ void write_reg() {
  * funcao()
  * Descricao
  */
-void read_reg() {
+void read_reg(int id) {
 
 }
 
@@ -254,6 +261,27 @@ void read_mem() {
 
 /*******************************************************/
 
+// +--------+
+// | CICLOS |
+// +--------+
+// void decode() {
+//
+// }
+//
+// void search_cycle() {
+//     PC();
+//     MemInst();
+//     BcoReg();
+//     ....
+// }
+//
+// void execution_cycle() {
+//
+// }
+
+/*******************************************************/
+
+
 // +--------------------+
 // | FUNÇÕES AUXILIARES |
 // +--------------------+
@@ -264,7 +292,7 @@ void read_mem() {
  * memória e registradores
  */
 void initialize() {
-    int i;
+    int i, j;
 
     // inicializar sinais de controle
     RegDst0 = 0;
@@ -288,13 +316,16 @@ void initialize() {
     MemParaReg1 = 0;
 
     // inicializar memória
+    memory_pointer = 0;
+    dynamic_mem_pointer = 0;
     for (i = 0; i < MAX_SIZE; i++) {
-        MEMORY[i] = 0;
+        for (j = 0; j < 32; j++) {
+            MEMORY[i][j] = 0;
+        }
     }
 
     // inicializar banco de registradores
     for (i = 0; i < 32; i++) {
-        // registerBank[i][j] = 0
         zero[i] = 0;
         at[i] = 0;
         v0[i] = 0;
@@ -339,32 +370,14 @@ void finalize() {
         regid = select_reg(i);
         printf("%s:\t%d\n", regid, i);
     }
-    // t0
-    // t1
-    // t2
-    // t3
-    // t4
-    // t5
-    // t6
-    // t7
-    // t8
-    // t9
-    //
-    // s0
-    // s1
-    // s2
-    // s3
-    // s4
-    // s5
-    // s6
-    // s7
 
     // imprimir as 32 primeiras posições de memória
-    for (int i = 0; i < 32; i++) {
-        printf("MEMORIA[%d] = %d\n", i, MEMORY[i]);
+    for (int i = dynamic_mem_pointer; i < 32; i++) {
+        // mudar para for char a char
+        printf("MEMORIA[%d] = %s\n", i - dynamic_mem_pointer, MEMORY[i]);
     }
-
 }
+
 
 /*******************************************************/
 
@@ -373,27 +386,41 @@ void finalize() {
 // +-----------+
 int main(int argc, char const *argv[]) {
 
+    int i;
+
     char instruction[32];
     const char* source = NULL;
 
     // verificar se código fonte foi passado como argumento
     if (argc < 2) {
-        fprintf(stderr, "Código fonte não foi passado como argumento!\n");
+        printf("Código fonte não foi passado como argumento!\n");
         exit(1);
     }
 
-    // ler código fonte
+    // abrir código fonte
     source = argv[1];
-    FILE *bin = NULL;
+    FILE* bin = NULL;
     bin = fopen(source, "r");
 
     // inicializar sinais
     initialize();
 
+    // checar integridade do código fonte
     if (bin == NULL) {
         printf("Código fonte não carregado.");
         exit(0);
     }
+
+    // ler instruções do código fonte
+    while (fscanf(bin, "%s ", &instruction) != EOF) {
+        // armazenar instruções na memória
+        for (i = 0; i < 32; i++) {
+            MEMORY[memory_pointer][i] = instruction[i];
+        }
+        // alinhamento por palavra
+        memory_pointer += 1;
+    }
+    dynamic_mem_pointer = memory_pointer;
 
     /* CICLOS */
 
