@@ -138,7 +138,8 @@ char MemtoReg1;     // 18
 // +--------------------+
 // | SINAIS DE ESTADO   |
 // +--------------------+
-char state[4];
+char state[5];
+char next_state[5];
 
 /*******************************************************/
 
@@ -344,7 +345,9 @@ void ALU() {
  * Descricao
  */
 void CONTROL(char* op) {
-
+  RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
+  RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+  RegWrite = (state[0] & state[1] & state[2] & state[3] & state[4])
 }
 
 /*******************************************************/
@@ -625,6 +628,12 @@ void start() {
     IRWrite     = 0;
     MemtoReg0   = 0;
     MemtoReg1   = 0;
+
+    //Inicializa o vetor de estado
+    int i;
+    for(i = 0; i < 5; i++){
+      state[i] = 0;
+    }
 }
 
 /**
