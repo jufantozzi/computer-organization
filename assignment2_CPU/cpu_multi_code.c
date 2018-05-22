@@ -344,11 +344,38 @@ void ALU() {
  * funcao()
  * Descricao
  */
-void CONTROL(char* op) {
-  RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
-  RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
-  RegWrite = (state[0] & state[1] & state[2] & state[3] & state[4])
-}
+ void CONTROL(char* op) {
+     RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
+     RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+     RegWrite = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]) | (state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+                     (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+                         (!state[0] & !state[1] & !state[2] & !state[3] & state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]); //conferido até aqui
+     ALUSrcA = (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+                     (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+                         (!state[0] & state[1] & state[2] & state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+     ALUSrcB0 = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+     ALUSrcB1 = (state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
+                     (!state[0] & !state[1] & state[2] & state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+     ALUOp0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+     ALUOp1 = (!state[0] & state[1] & state[2] & !state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+     PCSource0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                     (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+     PCSource1 = (state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                     (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+     PCWriteCond = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+     PCWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+                     (!state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                         (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+     IorD = (state[0] & state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+     MemRead = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & state[1] & !state[2] & !state[3] & !state[4]);
+     MemWrite = (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+     BNE = (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+     IRWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+     MemtoReg0 = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+     MemtoReg1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & state[4]);
+
+
+  }
 
 /*******************************************************/
 
