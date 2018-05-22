@@ -18,18 +18,31 @@
 #define DEBUG 1
 #define IF_DEBUG if(DEBUG)
 
+#define boolean char
+#define TRUE  1
+#define FALSE 0
+
+/*******************************************************/
+
+// +---------+
+// |  CLOCK  |
+// +---------+
+boolean clock = FALSE;
+
 /*******************************************************/
 
 // Decisões de projeto
-// - MUX possui como identificador a unidade funcional que ele dá a resposta
-// - MUX_IDENTIFICADOR
+// MUX possui como identificador a unidade funcional que ele dá a resposta
+// MUX_IDENTIFICADOR
+
+// - ANDI usa código de operação 11 do ALUOp
 
 /*******************************************************/
 
 // +---------+
 // | MEMÓRIA |
 // +---------+
-#define MAX_SIZE 100
+#define MAX_SIZE 128
 typedef char word[32];
 word MEMORY[MAX_SIZE];
 
@@ -38,42 +51,64 @@ int memory_pointer;
 
 /*******************************************************/
 
+// +----+
+// | IR |
+// +----+
+char op_code[6];
+char function[6];
+char rs[5];
+char rt[5];
+char rd[5];
+char immediate[16];
+char jump_addr[26];
+
 // +------------------------+
 // | BANCO DE REGISTRADORES |
 // +------------------------+
 typedef char reg[32];
-reg zero;  // 0
-reg at;    // 1
-reg v0;    // 2
-reg v1;    // 3
-reg a0;    // 4
-reg a1;    // 5
-reg a2;    // 6
-reg a3;    // 7
-reg t0;    // 8
-reg t1;    // 9
-reg t2;    // 10
-reg t3;    // 11
-reg t4;    // 12
-reg t5;    // 13
-reg t6;    // 14
-reg t7;    // 15
-reg s0;    // 16
-reg s1;    // 17
-reg s2;    // 18
-reg s3;    // 19
-reg s4;    // 20
-reg s5;    // 21
-reg s6;    // 22
-reg s7;    // 23
-reg t8;    // 24
-reg t9;    // 25
-reg k0;    // 26
-reg k1;    // 27
-reg gp;    // 28
-reg sp;    // 29
-reg fp;    // 30
-reg ra;    // 31
+reg zero;   // 0
+reg at;     // 1
+reg v0;     // 2
+reg v1;     // 3
+reg a0;     // 4
+reg a1;     // 5
+reg a2;     // 6
+reg a3;     // 7
+reg t0;     // 8
+reg t1;     // 9
+reg t2;     // 10
+reg t3;     // 11
+reg t4;     // 12
+reg t5;     // 13
+reg t6;     // 14
+reg t7;     // 15
+reg s0;     // 16
+reg s1;     // 17
+reg s2;     // 18
+reg s3;     // 19
+reg s4;     // 20
+reg s5;     // 21
+reg s6;     // 22
+reg s7;     // 23
+reg t8;     // 24
+reg t9;     // 25
+reg k0;     // 26
+reg k1;     // 27
+reg gp;     // 28
+reg sp;     // 29
+reg fp;     // 30
+reg ra;     // 31
+
+reg A;      // read data 1
+reg B;      // read data 2
+
+reg ALUOut; // saída da ULA
+
+reg MAR;    // memory address register
+reg IR;     // instruction register
+reg MBR;    // memory buffer register
+
+int PC;     // program counter
 
 /*******************************************************/
 
@@ -100,18 +135,31 @@ char IRWrite;       // 16
 char MemtoReg0;     // 17
 char MemtoReg1;     // 18
 
+// +--------------------+
+// | SINAIS DE ESTADO   |
+// +--------------------+
+char state[4];
+
 /*******************************************************/
 
 // +---------------------+
 // | UNIDADES FUNCIONAIS |
 // +---------------------+
-
 /**
- * funcao()
- * Descricao
- */
-void PC() {
-    /* code */
+* funcao()
+* SINAL DE CONTROLE: IORD
+* 0 - PEGA O VALOR DE PC
+* 1 - PEGA O VALOR DE ALUOUT
+* SAIDA: PARA ADDRESS EM MEMORY
+*/
+void MUX_MEMORY() {
+    switch (IorD) {
+            MAR = PC;
+            break;
+        case 1:
+            MAR = ALUout;
+            break;
+    }
 }
 
 /**
@@ -119,26 +167,15 @@ void PC() {
  * Descricao
  */
 void MEMORY_BANK() {
-    /* code */
-}
+    if (MemRead) {
+        MBR = MEMORY[MAR];
+    }
 
-/**
- * funcao()
- * SINAL DE CONTROLE: IORD
- * 0 - PEGA O VALOR DE PC
- * 1 - PEGA O VALOR DE ALUOUT
- * SAIDA: PARA ADDRESS EM MEMORY
- */
-void MUX_MEMORY() {
-    /* code */
-    switch (IorD) {
-      case 0:
-        break;
-      case 1:
-        break;
+    if (MemWrite) {
+        // B = registrador read data 2
+        MEMORY[MAR] = B;
     }
 }
-
 
 /**
  * funcao()
@@ -218,8 +255,31 @@ void MUX_BNE() {
  * funcao()
  * Descricao
  */
-void INSTRUCTIONS_REGISTERS() {
-    /* code */
+void IR_SET() {
+    int i;
+
+    // IR = MBR
+    if (IRWrite) {
+        for (i = 0; i < 6; i++) {
+            op_code[i] = MBR[31-i];
+            function[i] = MBR[5-i];
+        }
+
+        for (i = 0; i < 5; i++) {
+            rs[i] = MBR[25-i];
+            rt[i] = MBR[20-i];
+            rd[i] = MBR[15-i];
+        }
+
+        for (i = 0; i < 16; i++) {
+            immediate[i] = MBR[15-i];
+        }
+
+        for (i = 0; i < 26; i++) {
+            jump_addr[i] = MBR[25-i];
+        }
+
+    }
 }
 
 /**
@@ -283,8 +343,8 @@ void ALU() {
  * funcao()
  * Descricao
  */
-void CONTROL() {
-    /* code */
+void CONTROL(char* op) {
+
 }
 
 /*******************************************************/
@@ -298,7 +358,6 @@ void CONTROL() {
  * Descricao
  */
 char* register_name(int id) {
-    char* name = NULL;
     switch (id) {
         case 0:
             return "$zero";
@@ -509,101 +568,11 @@ reg* get_register(int id) {
     exit(0);
 }
 
-
-/**
- * funcao()
- * Descricao
- */
-void write_reg() {
-
-}
-
-/**
- * funcao()
- * Descricao
- */
-void read_reg(int id) {
-
-}
-
 /*******************************************************/
 
-// +-------------------+
-// | FUNÇÕES - MEMÓRIA |
-// +-------------------+
-
-/**
- * funcao()
- * Descricao
- */
-void write_mem() {
-
-}
-
-
-/**
- * funcao()
- * Descricao
- */
-void read_mem() {
-
-}
-
-/*******************************************************/
-
-// +--------+
-// | CICLOS |
-// +--------+
-// void decode() {
-//
-// }
-//
-// void search_cycle() {
-//     PC();
-//     MemInst();
-//     BcoReg();
-//     ....
-// }
-//
-// void execution_cycle() {
-//
-// }
-
-/*******************************************************/
-
-// +--------------------+
-// | FUNÇÕES AUXILIARES |
-// +--------------------+
-
-/**
- * initialize()
- * Inicializa todos os sinais de controle,
- * memória e registradores
- */
 void initialize() {
     int i, j;
     reg* current_reg = NULL;
-
-    // inicializar sinais de controle
-    RegDst0     = 0;
-    RegDst1     = 0;
-    RegWrite    = 0;
-    ALUSrcA     = 0;
-    ALUSrcB0    = 0;
-    ALUSrcB1    = 0;
-    ALUOp0      = 0;
-    ALUOp1      = 0;
-    PCSource0   = 0;
-    PCSource1   = 0;
-    PCWriteCond = 0;
-    PCWrite     = 0;
-    IorD        = 0;
-    MemRead     = 0;
-    MemWrite    = 0;
-    BNE         = 0;
-    IRWrite     = 0;
-    MemtoReg0   = 0;
-    MemtoReg1   = 0;
 
     // inicializar memória
     memory_pointer = 0;
@@ -621,6 +590,41 @@ void initialize() {
             (*current_reg)[j] = 0;
         }
     }
+
+    // inicializar PC p/ primeira posição válida
+    PC = 0;
+
+}
+
+/**
+ * ESTADO 0
+ * start()
+ * Inicializa todos os sinais de controle,
+ * memória e registradores
+ */
+void start() {
+    // inicializar sinais de controle
+    // inicializa para o ciclo de busca
+    RegDst0     = 0;
+    RegDst1     = 0;
+    RegWrite    = 0;
+    ALUSrcA     = 0;
+    // ALUSrcB = 01
+    ALUSrcB0    = 1;
+    ALUSrcB1    = 0;
+    ALUOp0      = 0;
+    ALUOp1      = 0;
+    PCSource0   = 0;
+    PCSource1   = 0;
+    PCWriteCond = 0;
+    PCWrite     = 0;
+    IorD        = 0;
+    MemRead     = 1;
+    MemWrite    = 0;
+    BNE         = 0;
+    IRWrite     = 0;
+    MemtoReg0   = 0;
+    MemtoReg1   = 0;
 }
 
 /**
@@ -648,6 +652,7 @@ void finalize() {
 
     printf("\nMEMÓRIA:\n");
     // imprimir as 32 primeiras posições de memória
+    dynamic_mem_pointer = 0;
     for (i = dynamic_mem_pointer; i < dynamic_mem_pointer + 32; i++) {
         printf("MEMORIA[%d] = \t", i - dynamic_mem_pointer);
         for (j = 0; j < 32; j++) {
@@ -697,7 +702,7 @@ int main(int argc, char const *argv[]) {
     FILE* bin = NULL;
     bin = fopen(source, "r");
 
-    // inicializar sinais
+    // inicializar memória e registradores
     initialize();
 
     // checar integridade do código fonte
@@ -706,7 +711,7 @@ int main(int argc, char const *argv[]) {
         exit(0);
     }
 
-    // ler instruções do código fonte
+    // ler instruções do có{digo fonte
     while (fscanf(bin, "%s ", &instruction) != EOF) {
         // armazenar instruções na memória
         for (i = 0; i < 32; i++) {
@@ -718,13 +723,29 @@ int main(int argc, char const *argv[]) {
     // memória dinâmica começa depois da memória de instruções
     dynamic_mem_pointer = memory_pointer;
 
-    IF_DEBUG printf("dynamic_mem_pointer = %d\n", dynamic_mem_pointer);
-
-    /* CICLOS */
-
     // fechar código fonte
     fclose(bin);
     bin = NULL;
+
+    IF_DEBUG printf("dynamic_mem_pointer = %d\n", dynamic_mem_pointer);
+
+    /* CICLOS */
+    // primeiro ciclo: inicializar sinais de controle
+    start();
+
+    // executar instruções
+    while (PC < dynamic_mem_pointer) {
+        clock = TRUE;
+        // carrega endereço de PC ou ALUout em MAR
+        MUX_MEMORY();
+        // carrega dado/instrução da memória em MBR
+        MEMORY_BANK();
+        // carregar valores de IR
+        IR_SET();
+        //
+
+
+    }
 
     // finalizar a execução
     // exibir os registradores e memória
