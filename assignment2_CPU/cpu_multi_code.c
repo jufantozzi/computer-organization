@@ -99,10 +99,7 @@ reg sp;     // 29
 reg fp;     // 30
 reg ra;     // 31
 
-reg A;      // read data 1
-reg B;      // read data 2
-
-reg ALUOut; // saída da ULA
+char write_register[5];
 
 reg MAR;    // memory address register
 reg IR;     // instruction register
@@ -111,6 +108,20 @@ reg MBR;    // memory buffer register
 int PC;     // program counter
 
 /*******************************************************/
+
+// +--------------------+
+// |        ULA         |
+// +--------------------+
+
+reg A;      // read data 1
+reg B;      // read data 2
+reg ALUOut; // saída da ULA
+char operando_1[32];
+char operando_2[32];
+char ULA_zero;
+
+/*******************************************************/
+
 
 // +--------------------+
 // | SINAIS DE CONTROLE |
@@ -134,6 +145,9 @@ char BNE;           // 15
 char IRWrite;       // 16
 char MemtoReg0;     // 17
 char MemtoReg1;     // 18
+
+//Auxiliar para BNE
+char PCControl;
 
 // +--------------------+
 // | SINAIS DE ESTADO   |
@@ -170,6 +184,7 @@ void MUX_MEMORY() {
 void MEMORY_BANK() {
     if (MemRead) {
         MBR = MEMORY[MAR];
+        IR = MEMORY[MAR];
     }
 
     if (MemWrite) {
@@ -187,8 +202,33 @@ void MEMORY_BANK() {
  * 3 - NÃO EXISTE
  * SAIDA: PARA WRITE REGISTER (REGISTERS)
  */
+
 void MUX_WRITE_REG() {
-    /* code */
+  int i;
+  switch (RegDst1) {
+      case 0:
+            switch (RegDst0) {
+                case 0:
+                    //escrever no registrador apontado por rt
+                    for(i = 0; i < 5; i++){
+                        write_register[i] = rt[i];
+                    }
+                    break;
+                case 1:
+                    //escrever no registrador apontado por rd
+                    for(i = 0; i < 5; i++){
+                        write_register[i] = rd[i];
+                    }
+                    break;
+            }
+          break;
+      case 1:
+          // registrador 31 = 11111 = $ra
+          for(i = 0; i < 5; i++){
+              write_register[i] = 1;
+          }
+          break;
+  }
 }
 
 
@@ -202,7 +242,22 @@ void MUX_WRITE_REG() {
  * SAIDA: PARA WRITE DATA (REGISTERS)
  */
 void MUX_WRITE_DATA() {
-    /* code */
+  int i;
+  switch (MemtoReg1) {
+      case 0:
+            switch (MemtoReg0) {
+                case 0:
+                    //Escrever de ALUout em banco de registradores[write_register]
+                    break;
+                case 1:
+                    //Escrever de MBR (ou MDR) em banco de registradores[write_register]
+                    break;
+            }
+          break;
+      case 1:
+          //Escreve de PC em banco de registradores[write_register]
+          break;
+  }
 }
 
 
@@ -214,7 +269,14 @@ void MUX_WRITE_DATA() {
  * SAIDA: ENTRADA 1 DA ALU
  */
 void MUX_ALU_1() {
-    /* code */
+  switch (ALUSrcA) {
+      case 0:
+          //PRIMEIRO OPERANDO DA ULA RECEBE PC
+          break;
+      case 1:
+          //PRIMEIRO OPERANDO DA ULA RECEBE A
+          break;
+  }
 }
 
 
@@ -228,7 +290,28 @@ void MUX_ALU_1() {
  * SAIDA: ENTRADA 2 DA ALU
  */
 void MUX_ALU_2() {
-    /* code */
+  switch (ALUSrcB1) {
+      case 0:
+            switch (ALUSrcB0) {
+                case 0:
+                    //SEGUNDO OPERANDO DA ULA RECEBE B
+                    break;
+                case 1:
+                    //SEGUNDO OPERANDO DA ULA RECEBE 4
+                    break;
+            }
+          break;
+      case 1:
+            switch (ALUSrcB0) {
+                case 0:
+                    //SEGUNDO OPERANDO DA ULA RECEBE IMEDIATO EXTENDIDO
+                    break;
+                case 1:
+                    //SEGUNDO OPERANDO DA ULA RECEBE IMEDIATO EXTENDIDO << 2
+                    break;
+            }
+          break;
+  }
 }
 
 /**
@@ -241,7 +324,28 @@ void MUX_ALU_2() {
  * SAIDA: PARA PC
  */
 void MUX_PC() {
-    /* code */
+  switch (PCSource1) {
+      case 0:
+            switch (PCSource0) {
+                case 0:
+                    // PC RECEBE ALU RESULT (SAIDA DA ULA)
+                    break;
+                case 1:
+                    // PC RECEBE ALUOUT
+                    break;
+            }
+          break;
+      case 1:
+            switch (PCSource0) {
+                case 0:
+                    // PC RECEBE jump_addr[26] << 2
+                    break;
+                case 1:
+                    // PC RECEBE DE A
+                    break;
+            }
+          break;
+  }
 }
 
 /**
@@ -249,7 +353,14 @@ void MUX_PC() {
  * Descricao
  */
 void MUX_BNE() {
-    /* code */
+  switch (BNE) {
+      case 0:
+          // PCControl recebe ((ULA_zero & PCWriteCond) | PCWrite)
+          break;
+      case 1:
+        // PCControl recebe ((!ULA_zero & PCWriteCond) | PCWrite)
+          break;
+  }
 }
 
 /**
@@ -262,22 +373,22 @@ void IR_SET() {
     // IR = MBR
     if (IRWrite) {
         for (i = 0; i < 6; i++) {
-            op_code[i] = MBR[31-i];
-            function[i] = MBR[5-i];
+            op_code[i] = IR[31-i];
+            function[i] = IR[5-i];
         }
 
         for (i = 0; i < 5; i++) {
-            rs[i] = MBR[25-i];
-            rt[i] = MBR[20-i];
-            rd[i] = MBR[15-i];
+            rs[i] = IR[25-i];
+            rt[i] = IR[20-i];
+            rd[i] = IR[15-i];
         }
 
         for (i = 0; i < 16; i++) {
-            immediate[i] = MBR[15-i];
+            immediate[i] = IR[15-i];
         }
 
         for (i = 0; i < 26; i++) {
-            jump_addr[i] = MBR[25-i];
+            jump_addr[i] = IR[25-i];
         }
 
     }
@@ -345,37 +456,104 @@ void ALU() {
  * Descricao
  */
  void CONTROL(char* op) {
+     //Setando os sinais
      RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
+
      RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+
      RegWrite = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]) | (state[0] & state[1] & state[2] & !state[3] & !state[4]) |
                      (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & state[3] & !state[4]) |
                          (!state[0] & !state[1] & !state[2] & !state[3] & state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]); //conferido até aqui
+
      ALUSrcA = (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
                      (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
                          (!state[0] & state[1] & state[2] & state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      ALUSrcB0 = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+
      ALUSrcB1 = (state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
                      (!state[0] & !state[1] & state[2] & state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      ALUOp0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      ALUOp1 = (!state[0] & state[1] & state[2] & !state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      PCSource0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
                      (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      PCSource1 = (state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
                      (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+
      PCWriteCond = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      PCWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
                      (!state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
                          (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+
      IorD = (state[0] & state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+
      MemRead = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & state[1] & !state[2] & !state[3] & !state[4]);
+
      MemWrite = (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+
      BNE = (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+
      IRWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+
      MemtoReg0 = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+
      MemtoReg1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & state[4]);
 
+     //Setando next state
+     next_state[0] = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
+                     (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+                         (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                         (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
+                         (state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+                         (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]);
 
-  }
+     next_state[1] = (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[4] & op_code[5]) |
+                     (!state[0] & state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & op_code[3] & !op_code[4] & !op_code[5]);
+
+     next_state[2] = (state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
+                     (!state[0] & state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & op_code[3] & !op_code[4] & op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & !op_code[2] & op_code[3] & !op_code[4] & !op_code[5]) |
+                     (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & op_code[3] & !op_code[4] & !op_code[5]);
+
+     next_state[3] = (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & op_code[3] & !op_code[4] & !op_code[5]);
+
+     next_state[4] = (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                     (state[0] & state[1] & state[2] & state[3] & !state[4]);
+
+ }
+/*
+void Control_Test(char *op){
+   printf("op = %s\n", op);
+   printf("RegDst0 = %d\n RegDst1 = %d\nRegWrite = %d\nALUSrcA = %d\nALUSrcB0 = %d\nALUSrcB1 = %d\nALUOp0 = %d\nALUOp1 = %d\n
+           PCSource0 = %d\nPCSource1 = %d\nPCWriteCond = %d\nPCWrite = %d\nIorD = %d\nMemRead = %d\nMemWrite = %d\nBNE = %d\n
+               IRWrite = %d\nMemtoReg0 = %d\nMemtoReg1 = %d\n",
+               RegDst0,RegDst1,RegWrite, ALUSrcA, ALUSrcB0, ALUSrcB1, ALUOp0,
+                   ALUOp1, PCSource0, PCSource1, PCWriteCond, PCWrite, IorD, MemRead,
+                       MemWrite, BNE, IRWrite, MemtoReg0, MemtoReg1);
+}
+*/
 
 /*******************************************************/
 
@@ -621,6 +799,10 @@ void initialize() {
         }
     }
 
+    //inicializando o destino de escrita no banco de registradores
+    for(i = 0; i < 5; i++){
+      write_register[i] = 0;
+    }
     // inicializar PC p/ primeira posição válida
     PC = 0;
 
