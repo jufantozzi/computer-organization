@@ -18,10 +18,12 @@
 #define DEBUG 1
 #define IF_DEBUG if(DEBUG)
 
-#define boolean char
 #define TRUE  1
 #define FALSE 0
 
+typedef boolean char;
+typedef byte char;
+typedef word int;
 /*******************************************************/
 
 // +---------+
@@ -43,10 +45,9 @@ boolean clock = FALSE;
 // | MEMÓRIA |
 // +---------+
 #define MAX_SIZE 128
-typedef char word[32];
-word MEMORY[MAX_SIZE];
+byte MEMORY[MAX_SIZE];
 
-int dynamic_mem_pointer;
+byte dynamic_mem_pointer;
 int memory_pointer;
 
 /*******************************************************/
@@ -54,18 +55,18 @@ int memory_pointer;
 // +----+
 // | IR |
 // +----+
-char op_code[6];
-char function[6];
-char rs[5];
-char rt[5];
-char rd[5];
-char immediate[16];
-char jump_addr[26];
+byte op_code[6];
+byte function[6];
+byte rs[5];
+byte rt[5];
+byte rd[5];
+byte immediate[16];
+byte jump_addr[26];
 
 // +------------------------+
 // | BANCO DE REGISTRADORES |
 // +------------------------+
-typedef char reg[32];
+typedef int reg;
 reg zero;   // 0
 reg at;     // 1
 reg v0;     // 2
