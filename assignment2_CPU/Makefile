@@ -25,7 +25,10 @@ SRC = ./cpu_multi_code.c
 INCLUDES = .
 
 # compiler flags
-FLAGS = -g -std=c99 -lm -Wall
+FLAGS = -g -std=c99 -lm -Wall -pedantic
+
+# in case ANSI C is necessary
+# FLAGS = -g -std=c89 -lm -Wall
 
 all: compile
 
