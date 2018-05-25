@@ -1066,7 +1066,7 @@ void finalize() {
 		for (j = i; j < (i + (8 * 4)); j+=8) {
 			regid = register_name(j);
 			current_reg = get_register(j);
-			printf("R%02d (%s) = %d\t", i, regid, (*current_reg));
+			printf("R%02d (%s) = %d\t", j, regid, (*current_reg));
 		}
 		printf("\n");
 	}
