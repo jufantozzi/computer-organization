@@ -18,18 +18,40 @@
 #define DEBUG 1
 #define IF_DEBUG if(DEBUG)
 
+#define GETBIT(x,p) (((x)>>(p))&1)
+
 #define TRUE  1
 #define FALSE 0
 
-typedef boolean char;
-typedef byte char;
-typedef word int;
+typedef char boolean;
+typedef char byte;
+typedef char bit;
+typedef int word;
+
 /*******************************************************/
 
 // +---------+
 // |  CLOCK  |
 // +---------+
 boolean clock = FALSE;
+
+// +----------------------+
+// |  FUNÇÕES AUXILIARES  |
+// +----------------------+
+/**
+ * funcao()
+ * Descricao
+ */
+ int bin2dec(bit* binary, int size) {
+    int i;
+    int sum = 0;
+    for (i = 0; i < size; i++) {
+        if ((int)(binary[i])) {
+            sum += pow(2, i);
+        }
+    }
+    return sum;
+ }
 
 /*******************************************************/
 
@@ -46,22 +68,20 @@ boolean clock = FALSE;
 // +---------+
 #define MAX_SIZE 128
 byte MEMORY[MAX_SIZE];
-
-byte dynamic_mem_pointer;
-int memory_pointer;
+byte* memory_pointer;
 
 /*******************************************************/
 
 // +----+
 // | IR |
 // +----+
-byte op_code[6];
-byte function[6];
-byte rs[5];
-byte rt[5];
-byte rd[5];
-byte immediate[16];
-byte jump_addr[26];
+bit op_code[6];
+bit function[6];
+bit rs[5];
+bit rt[5];
+bit rd[5];
+bit immediate[16];
+bit jump_addr[26];
 
 // +------------------------+
 // | BANCO DE REGISTRADORES |
@@ -100,11 +120,14 @@ reg sp;     // 29
 reg fp;     // 30
 reg ra;     // 31
 
-char write_register[5];
+bit write_register[5];
 
 reg MAR;    // memory address register
 reg IR;     // instruction register
-reg MBR;    // memory buffer register
+reg MDR;    // memory buffer register
+
+word write_data;
+reg* write_reg; // ponteiro para o registrador que receberá write data
 
 int PC;     // program counter
 
@@ -114,47 +137,49 @@ int PC;     // program counter
 // |        ULA         |
 // +--------------------+
 
-reg A;      // read data 1
-reg B;      // read data 2
-reg ALUOut; // saída da ULA
-char operando_1[32];
-char operando_2[32];
-char ULA_zero;
+reg A; // read data 1
+reg B; // read data 2
+word ALUResult; // saída da ULA
+reg ALUOut; // registrador que armazena a saída da ULA
+word immediate_extended; // saída do sign extend
+word operator_1; // primeiro operando
+word operator_2; // segundo operando
+bit ULA_zero; // bit que indica se resultado é 0 ou não
 
 /*******************************************************/
-
 
 // +--------------------+
 // | SINAIS DE CONTROLE |
 // +--------------------+
-char RegDst0;       // 00
-char RegDst1;       // 01
-char RegWrite;      // 02
-char ALUSrcA;       // 03
-char ALUSrcB0;      // 04
-char ALUSrcB1;      // 05
-char ALUOp0;        // 06
-char ALUOp1;        // 07
-char PCSource0;     // 08
-char PCSource1;     // 09
-char PCWriteCond;   // 10
-char PCWrite;       // 11
-char IorD;          // 12
-char MemRead;       // 13
-char MemWrite;      // 14
-char BNE;           // 15
-char IRWrite;       // 16
-char MemtoReg0;     // 17
-char MemtoReg1;     // 18
+bit RegDst0;       // 00
+bit RegDst1;       // 01
+bit RegWrite;      // 02
+bit ALUSrcA;       // 03
+bit ALUSrcB0;      // 04
+bit ALUSrcB1;      // 05
+bit ALUOp0;        // 06
+bit ALUOp1;        // 07
+bit PCSource0;     // 08
+bit PCSource1;     // 09
+bit PCWriteCond;   // 10
+bit PCWrite;       // 11
+bit IorD;          // 12
+bit MemRead;       // 13
+bit MemWrite;      // 14
+bit BNE;           // 15
+bit IRWrite;       // 16
+bit MemtoReg0;     // 17
+bit MemtoReg1;     // 18
 
-//Auxiliar para BNE
-char PCControl;
+// auxiliar para BNE:
+// sinal de controle que chega ao PC
+bit PCControl;
 
 // +--------------------+
 // | SINAIS DE ESTADO   |
 // +--------------------+
-char state[5];
-char next_state[5];
+bit state[5];
+bit next_state[5];
 
 /*******************************************************/
 
@@ -173,7 +198,7 @@ void MUX_MEMORY() {
             MAR = PC;
             break;
         case 1:
-            MAR = ALUout;
+            MAR = ALUOut;
             break;
     }
 }
@@ -184,7 +209,7 @@ void MUX_MEMORY() {
  */
 void MEMORY_BANK() {
     if (MemRead) {
-        MBR = MEMORY[MAR];
+        MDR = MEMORY[MAR];
         IR = MEMORY[MAR];
     }
 
@@ -204,30 +229,27 @@ void MEMORY_BANK() {
  * SAIDA: PARA WRITE REGISTER (REGISTERS)
  */
 
+// write_reg = get_register(bin2dec(write_register, 5));
+
 void MUX_WRITE_REG() {
-  int i;
+    int i;
+
   switch (RegDst1) {
       case 0:
             switch (RegDst0) {
                 case 0:
-                    //escrever no registrador apontado por rt
-                    for(i = 0; i < 5; i++){
-                        write_register[i] = rt[i];
-                    }
+                    // escrever no registrador apontado por rt
+                    write_reg = get_register(bin2dec(rt, 5));
                     break;
                 case 1:
-                    //escrever no registrador apontado por rd
-                    for(i = 0; i < 5; i++){
-                        write_register[i] = rd[i];
-                    }
+                    // escrever no registrador apontado por rd
+                    write_reg = get_register(bin2dec(rd, 5));
                     break;
             }
           break;
       case 1:
           // registrador 31 = 11111 = $ra
-          for(i = 0; i < 5; i++){
-              write_register[i] = 1;
-          }
+          write_reg = get_register(31);
           break;
   }
 }
@@ -248,15 +270,18 @@ void MUX_WRITE_DATA() {
       case 0:
             switch (MemtoReg0) {
                 case 0:
-                    //Escrever de ALUout em banco de registradores[write_register]
+                    // escreve de ALUOut em Banco de Registradores
+                    write_data = ALUOUT;
                     break;
                 case 1:
-                    //Escrever de MBR (ou MDR) em banco de registradores[write_register]
+                    // Escrever de MDR (ou MDR) em banco de registradores[write_register]
+                    write_data = MDR;
                     break;
             }
           break;
       case 1:
           //Escreve de PC em banco de registradores[write_register]
+          write_data = PC;
           break;
   }
 }
@@ -272,10 +297,12 @@ void MUX_WRITE_DATA() {
 void MUX_ALU_1() {
   switch (ALUSrcA) {
       case 0:
-          //PRIMEIRO OPERANDO DA ULA RECEBE PC
+          // PRIMEIRO OPERANDO DA ULA RECEBE PC
+          operator_1 = PC;
           break;
       case 1:
           //PRIMEIRO OPERANDO DA ULA RECEBE A
+          operator_1 = A;
           break;
   }
 }
@@ -296,19 +323,23 @@ void MUX_ALU_2() {
             switch (ALUSrcB0) {
                 case 0:
                     //SEGUNDO OPERANDO DA ULA RECEBE B
+                    operator_2 = B;
                     break;
                 case 1:
                     //SEGUNDO OPERANDO DA ULA RECEBE 4
+                    operator_2 = 4;
                     break;
             }
-          break;
+            break;
       case 1:
             switch (ALUSrcB0) {
                 case 0:
                     //SEGUNDO OPERANDO DA ULA RECEBE IMEDIATO EXTENDIDO
+                    operator_2 = immediate_extended;
                     break;
                 case 1:
                     //SEGUNDO OPERANDO DA ULA RECEBE IMEDIATO EXTENDIDO << 2
+                    operator_2 = immediate_extended << 2;
                     break;
             }
           break;
@@ -325,28 +356,33 @@ void MUX_ALU_2() {
  * SAIDA: PARA PC
  */
 void MUX_PC() {
-  switch (PCSource1) {
-      case 0:
+    int i;
+    switch (PCSource1) {
+        case 0:
             switch (PCSource0) {
                 case 0:
                     // PC RECEBE ALU RESULT (SAIDA DA ULA)
+                    PC = ALUResult;
                     break;
                 case 1:
                     // PC RECEBE ALUOUT
+                    PC = ALUOut;
                     break;
             }
-          break;
-      case 1:
+            break;
+        case 1:
             switch (PCSource0) {
                 case 0:
                     // PC RECEBE jump_addr[26] << 2
+                    PC = bin2dec(jump_addr, 26) << 2;
                     break;
                 case 1:
                     // PC RECEBE DE A
+                    PC = A;
                     break;
             }
-          break;
-  }
+            break;
+      }
 }
 
 /**
@@ -354,14 +390,14 @@ void MUX_PC() {
  * Descricao
  */
 void MUX_BNE() {
-  switch (BNE) {
+    switch (BNE) {
       case 0:
-          // PCControl recebe ((ULA_zero & PCWriteCond) | PCWrite)
-          break;
-      case 1:
-        // PCControl recebe ((!ULA_zero & PCWriteCond) | PCWrite)
-          break;
-  }
+            PCControl = ((ULA_zero & PCWriteCond) | PCWrite);
+            break;
+        case 1:
+            PCControl = (((!ULA_zero) & PCWriteCond) | PCWrite);
+            break;
+    }
 }
 
 /**
@@ -371,27 +407,26 @@ void MUX_BNE() {
 void IR_SET() {
     int i;
 
-    // IR = MBR
+    // IR = MDR
     if (IRWrite) {
         for (i = 0; i < 6; i++) {
-            op_code[i] = IR[31-i];
-            function[i] = IR[5-i];
+            op_code[i] = GETBIT(IR, 26+i);
+            function[i] = GETBIT(IR, i);
         }
 
         for (i = 0; i < 5; i++) {
-            rs[i] = IR[25-i];
-            rt[i] = IR[20-i];
-            rd[i] = IR[15-i];
+            rs[i] = GETBIT(IR, 21+i);
+            rt[i] = GETBIT(IR, 16+i);
+            rd[i] = GETBIT(IR, 11+i);
         }
 
         for (i = 0; i < 16; i++) {
-            immediate[i] = IR[15-i];
+            immediate[i] = GETBIT(IR, i);
         }
 
         for (i = 0; i < 26; i++) {
-            jump_addr[i] = IR[25-i];
+            jump_addr[i] = GETBIT(IR, i);
         }
-
     }
 }
 
@@ -399,16 +434,10 @@ void IR_SET() {
  * funcao()
  * Descricao
  */
-void MEM_DATA_REGISTER() {
-    /* code */
-}
-
-/**
- * funcao()
- * Descricao
- */
 void REGISTER_BANK() {
-    /* code */
+    if (RegWrite) {
+        (*write_reg) = write_data;
+    }
 }
 
 /**
@@ -416,25 +445,8 @@ void REGISTER_BANK() {
  * Descricao
  */
 void SIGNAL_EXTEND_16_TO_32() {
-    /* code */
+    immediate_extended = bin2dec(immediate, 16);
 }
-
-/**
- * funcao()
- * Descricao
- */
-void SHIFT_LEFT_2_PC() {
-    /* code */
-}
-
-/**
- * funcao()
- * Descricao
- */
-void SHIFT_LEFT_2_MUX_ALU_2() {
-    /* code */
-}
-
 
 /**
  * funcao()
@@ -457,6 +469,7 @@ void ALU() {
  * Descricao
  */
  void CONTROL(char* op) {
+
      //Setando os sinais
      RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
 
@@ -544,17 +557,6 @@ void ALU() {
                      (state[0] & state[1] & state[2] & state[3] & !state[4]);
 
  }
-/*
-void Control_Test(char *op){
-   printf("op = %s\n", op);
-   printf("RegDst0 = %d\n RegDst1 = %d\nRegWrite = %d\nALUSrcA = %d\nALUSrcB0 = %d\nALUSrcB1 = %d\nALUOp0 = %d\nALUOp1 = %d\n
-           PCSource0 = %d\nPCSource1 = %d\nPCWriteCond = %d\nPCWrite = %d\nIorD = %d\nMemRead = %d\nMemWrite = %d\nBNE = %d\n
-               IRWrite = %d\nMemtoReg0 = %d\nMemtoReg1 = %d\n",
-               RegDst0,RegDst1,RegWrite, ALUSrcA, ALUSrcB0, ALUSrcB1, ALUOp0,
-                   ALUOp1, PCSource0, PCSource1, PCWriteCond, PCWrite, IorD, MemRead,
-                       MemWrite, BNE, IRWrite, MemtoReg0, MemtoReg1);
-}
-*/
 
 /*******************************************************/
 
@@ -779,31 +781,55 @@ reg* get_register(int id) {
 
 /*******************************************************/
 
-void initialize() {
-    int i, j;
+void initialize(const char* source) {
+    int i;
+    // instrução a ser lida do arquivo
+    int instruction;
+    // conta quantas instruções foram lidas para indexar memória
+    int instr_counter;
     reg* current_reg = NULL;
 
-    // inicializar memória
-    memory_pointer = 0;
-    dynamic_mem_pointer = 0;
-    for (i = 0; i < MAX_SIZE; i++) {
-        for (j = 0; j < 32; j++) {
-            MEMORY[i][j] = 0;
-        }
+    // abrir arquivo do código fonte
+    FILE* bin = NULL;
+    bin = fopen(source, "r");
+
+    // checar integridade do código fonte
+    if (bin == NULL) {
+        printf("ERRO: Código fonte não carregado.\n");
+        exit(0);
     }
+
+    // inicializar memória
+    memory_pointer = MEMORY;
+    for (i = 0; i < MAX_SIZE; i++) {
+        MEMORY[i] = 0;
+    }
+
+    // ler instruções do código fonte
+    instr_counter = 0;
+    while (fscanf(bin, "%d ", &instruction) != EOF) {
+        // armazenar instruções na memória
+        memory_pointer = (word*)memory_pointer;
+        memory_pointer[instr_counter] = instruction;
+        memory_pointer = (byte*)memory_pointer;
+        instr_counter += 1;
+    }
+
+    // fechar arquivo do código fonte
+    fclose(bin);
+    bin = NULL;
 
     // inicializar banco de registradores
     for (i = 0; i < 32; i++) {
         current_reg = get_register(i);
-        for (j = 0; j < 32; j++) {
-            (*current_reg)[j] = 0;
-        }
+        (*current_reg) = 0;
     }
 
-    //inicializando o destino de escrita no banco de registradores
-    for(i = 0; i < 5; i++){
-      write_register[i] = 0;
+    // inicializando o destino de escrita no banco de registradores
+    for(i = 0; i < 5; i++) {
+        write_register[i] = 0;
     }
+
     // inicializar PC p/ primeira posição válida
     PC = 0;
 
@@ -816,6 +842,7 @@ void initialize() {
  * memória e registradores
  */
 void start() {
+    int i;
     // inicializar sinais de controle
     // inicializa para o ciclo de busca
     RegDst0     = 0;
@@ -839,10 +866,9 @@ void start() {
     MemtoReg0   = 0;
     MemtoReg1   = 0;
 
-    //Inicializa o vetor de estado
-    int i;
-    for(i = 0; i < 5; i++){
-      state[i] = 0;
+    // inicializa o vetor de estado
+    for(i = 0; i < 5; i++) {
+        state[i] = 0;
     }
 }
 
@@ -863,41 +889,21 @@ void finalize() {
         regid = register_name(i);
         printf("%s:\t", regid);
         // imprimir conteúdo do registrador
-        for (j = 0; j < 32; j++) {
-            printf("%d", (*current_reg)[j]);
-        }
+        printf("%d", (*current_reg));
         printf("\n");
     }
 
     printf("\nMEMÓRIA:\n");
     // imprimir as 32 primeiras posições de memória
-    dynamic_mem_pointer = 0;
-    for (i = dynamic_mem_pointer; i < dynamic_mem_pointer + 32; i++) {
-        printf("MEMORIA[%d] = \t", i - dynamic_mem_pointer);
-        for (j = 0; j < 32; j++) {
-            printf("%d", MEMORY[i][j]);
-        }
+    for (i = 0; i < 32; i++) {
+        printf("MEMORIA[%d] = \t", i);
+        printf("%d", MEMORY[i]);
         printf("\n");
     }
 }
 
-/**
- * funcao()
- * Descricao
- */
-int bin2dec(int n) {
-    int decimal = 0;
-    int i = 0;
-    int remainder;
 
-    while (n != 0) {
-        remainder = n % 10;
-        n /= 10;
-        decimal += remainder * pow(2, i);
-        ++i;
-    }
-    return decimal;
-}
+
 
 /*******************************************************/
 
@@ -907,7 +913,6 @@ int bin2dec(int n) {
 int main(int argc, char const *argv[]) {
 
     int i;
-    char instruction[32];
     const char* source = NULL;
 
     // verificar se código fonte foi passado como argumento
@@ -918,57 +923,18 @@ int main(int argc, char const *argv[]) {
 
     // abrir código fonte
     source = argv[1];
-    FILE* bin = NULL;
-    bin = fopen(source, "r");
 
     // inicializar memória e registradores
-    initialize();
+    initialize(source);
 
-    // checar integridade do código fonte
-    if (bin == NULL) {
-        printf("ERRO: Código fonte não carregado.\n");
-        exit(0);
-    }
-
-    // ler instruções do có{digo fonte
-    while (fscanf(bin, "%s ", &instruction) != EOF) {
-        // armazenar instruções na memória
-        for (i = 0; i < 32; i++) {
-            MEMORY[memory_pointer][i] = instruction[i];
-        }
-        // alinhamento por palavra
-        memory_pointer += 1;
-    }
-    // memória dinâmica começa depois da memória de instruções
-    dynamic_mem_pointer = memory_pointer;
-
-    // fechar código fonte
-    fclose(bin);
-    bin = NULL;
-
-    IF_DEBUG printf("dynamic_mem_pointer = %d\n", dynamic_mem_pointer);
-
-    /* CICLOS */
-    // primeiro ciclo: inicializar sinais de controle
+    // inicializar sinais de controle
     start();
 
+    // ciclos
     // executar instruções
-    while (PC < dynamic_mem_pointer) {
-        clock = TRUE;
-        // carrega endereço de PC ou ALUout em MAR
-        MUX_MEMORY();
-        // carrega dado/instrução da memória em MBR
-        MEMORY_BANK();
-        // carregar valores de IR
-        IR_SET();
-        //
-
+    while (TRUE) {
 
     }
-
-    // finalizar a execução
-    // exibir os registradores e memória
-    finalize();
 
     return 0;
 }
