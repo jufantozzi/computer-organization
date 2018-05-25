@@ -1,2 +1,3 @@
 language: c
-script: build.sh
+before-script: cd assignment2_CPU
+script: make
