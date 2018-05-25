@@ -17,6 +17,7 @@ CC = gcc
 
 # output
 BINARY = ./cpu_multi_code
+BIN = code.bin
 
 # sources
 SRC = ./cpu_multi_code.c
@@ -25,19 +26,20 @@ SRC = ./cpu_multi_code.c
 INCLUDES = .
 
 # compiler flags
-FLAGS = -g -std=c99 -lm -Wall -pedantic
-SUPPRESS = -g -Wformat=0 -lm
+# FLAGS = -g -std=c99 -lm -Wall -pedantic
+# SUPPRESS = -g -Wformat=0 -lm
+FLAGS = -g -lm
 
 # in case ANSI C is necessary
 # FLAGS = -g -std=c89 -lm -Wall
 
-all: compile
+all: compile run
 
 compile:
 	$(CC) -o $(BINARY) -I $(INCLUDES) $(SRC) $(FLAGS)
 
 run:
-	$(BINARY)
+	$(BINARY) $(BIN)
 
 nowarn:
 	$(CC) -o $(BINARY) -I $(INCLUDES) $(SRC) $(SUPPRESS)
