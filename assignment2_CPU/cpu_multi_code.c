@@ -139,12 +139,13 @@ int PC;     // program counter
 
 reg A; // read data 1
 reg B; // read data 2
+bit ALUInput[3]; // bits que definem quais operações a ULA deverá executar
 word ALUResult; // saída da ULA
 reg ALUOut; // registrador que armazena a saída da ULA
 word immediate_extended; // saída do sign extend
 word operator_1; // primeiro operando
 word operator_2; // segundo operando
-bit ULA_zero; // bit que indica se resultado é 0 ou não
+bit ALU_zero; // bit que indica se resultado é 0 ou não
 
 /*******************************************************/
 
@@ -274,13 +275,13 @@ void MUX_WRITE_DATA() {
                     write_data = ALUOUT;
                     break;
                 case 1:
-                    // Escrever de MDR (ou MDR) em banco de registradores[write_register]
+                    // escreve de MDR em banco de registradores[write_register]
                     write_data = MDR;
                     break;
             }
           break;
       case 1:
-          //Escreve de PC em banco de registradores[write_register]
+          // escreve de PC em banco de registradores[write_register]
           write_data = PC;
           break;
   }
@@ -392,10 +393,10 @@ void MUX_PC() {
 void MUX_BNE() {
     switch (BNE) {
       case 0:
-            PCControl = ((ULA_zero & PCWriteCond) | PCWrite);
+            PCControl = ((ALU_zero & PCWriteCond) | PCWrite);
             break;
         case 1:
-            PCControl = (((!ULA_zero) & PCWriteCond) | PCWrite);
+            PCControl = (((!ALU_zero) & PCWriteCond) | PCWrite);
             break;
     }
 }
@@ -453,7 +454,54 @@ void SIGNAL_EXTEND_16_TO_32() {
  * Descricao
  */
 void ALU_CONTROL() {
-    /* code */
+    switch(ALUOp1){
+		case 0:	// não precisa checar o campo de função (instruções LW, SW, Branch)
+			switch(ALUOp0){
+				case 0:	// add
+					ALUInput[2] = 0
+					ALUInput[1] = 1
+					ALUInput[0] = 0
+					break;
+				case 1:	// subtract
+					ALUInput[2] = 1
+					ALUInput[1] = 1
+					ALUInput[0] = 0
+					break;
+			}
+			break;
+		case 1: // precisa checar o campo de função e ALUOp0 sempre será 0
+			// (ALUOp = 10 e Function = 100000) operação = add
+			if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 0) && ((function[0] == 0)){
+				ALUInput[2] = 0
+				ALUInput[1] = 1
+				ALUInput[0] = 0
+			}
+			// (ALUOp = 10 e Function = 100010) operação = subtract
+			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 1) && ((function[0] == 0)){
+				ALUInput[2] = 1
+				ALUInput[1] = 1
+				ALUInput[0] = 0
+			}
+			// (ALUOp = 10 e Function = 100100) operação = and
+			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 1) && ((function[1] == 0) && ((function[0] == 0))
+				ALUInput[2] = 0
+				ALUInput[1] = 0
+				ALUInput[0] = 0
+			}
+			// (ALUOp = 10 e Function = 100101) operação = or
+			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 1) && ((function[1] == 0) && ((function[0] == 1))
+				ALUInput[2] = 0
+				ALUInput[1] = 0
+				ALUInput[0] = 1
+			}
+			// (ALUOp = 10 e Function = 101010) operação = set on less than
+			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 1) && ((function[2] == 0) && ((function[1] == 1) && ((function[0] == 0))
+				ALUInput[2] = 1
+				ALUInput[1] = 1
+				ALUInput[0] = 1
+			}
+			break;
+	}
 }
 
 /**
@@ -461,7 +509,30 @@ void ALU_CONTROL() {
  * Descricao
  */
 void ALU() {
-    /* code */
+	// (ALUInput = 010) operação = add
+    if((ALUInput[2] == 0) && (ALUInput[1] == 1) && (ALUInput[0] == 0)){
+		ALUResult = operator_1 + operator_2;
+	}
+	// (ALUInput = 110) operação = subtract
+	else if((ALUInput[2] == 1) && (ALUInput[1] == 1) && (ALUInput[0] == 0)){
+		ALUResult = operator_1 - operator_2;
+	}
+	// (ALUInput = 000) operação = and
+	else if((ALUInput[2] == 0) && (ALUInput[1] == 0) && (ALUInput[0] == 0)){
+		ALUResult = operator_1 & operator_2;
+	}
+	// (ALUInput = 001) operação = or
+	else if((ALUInput[2] == 0) && (ALUInput[1] == 1) && (ALUInput[0] == 1)){
+		ALUResult = operator_1 | operator_2;
+	}
+	// (ALUInput = 111) operação = set on less than
+	else if((ALUInput[2] == 1) && (ALUInput[1] == 1) && (ALUInput[0] == 1)){
+		(operator_1 < operator_2) ? (ALUResult = 1) : (ALUResult = 0);
+	}
+}
+
+void ALU_OUT(){
+	ALUOut = ALUResult;
 }
 
 /**
