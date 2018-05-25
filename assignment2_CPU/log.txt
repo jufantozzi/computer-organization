@@ -1,4 +1,4 @@
-gcc -o ./cpu_multi_code -I . ./cpu_multi_code.c -g -std=c99 -lm -Wall -pedantic
+gcc -o ./cpu_multi_code -I . ./cpu_multi_code.c -g -Wformat=0 -lm
 ./cpu_multi_code.c: In function ‘MUX_WRITE_REG’:
 ./cpu_multi_code.c:243:33: warning: implicit declaration of function ‘get_register’ [-Wimplicit-function-declaration]
                      write_reg = get_register(bin2dec(rt, 5));
@@ -12,22 +12,12 @@ gcc -o ./cpu_multi_code -I . ./cpu_multi_code.c -g -std=c99 -lm -Wall -pedantic
 ./cpu_multi_code.c:253:21: warning: assignment makes pointer from integer without a cast [-Wint-conversion]
            write_reg = get_register(31);
                      ^
-./cpu_multi_code.c:236:9: warning: unused variable ‘i’ [-Wunused-variable]
-     int i;
-         ^
 ./cpu_multi_code.c: In function ‘MUX_WRITE_DATA’:
 ./cpu_multi_code.c:275:34: error: ‘ALUOUT’ undeclared (first use in this function); did you mean ‘ALUOp1’?
                      write_data = ALUOUT;
                                   ^~~~~~
                                   ALUOp1
 ./cpu_multi_code.c:275:34: note: each undeclared identifier is reported only once for each function it appears in
-./cpu_multi_code.c:269:7: warning: unused variable ‘i’ [-Wunused-variable]
-   int i;
-       ^
-./cpu_multi_code.c: In function ‘MUX_PC’:
-./cpu_multi_code.c:360:9: warning: unused variable ‘i’ [-Wunused-variable]
-     int i;
-         ^
 ./cpu_multi_code.c: In function ‘ALU_CONTROL’:
 ./cpu_multi_code.c:462:6: error: expected ‘;’ before ‘ALUInput’
       ALUInput[1] = 1
@@ -38,18 +28,12 @@ gcc -o ./cpu_multi_code -I . ./cpu_multi_code.c -g -std=c99 -lm -Wall -pedantic
 ./cpu_multi_code.c:474:141: error: expected ‘)’ before ‘{’ token
     if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 0) && ((function[0] == 0)){
                                                                                                                                              ^
-./cpu_multi_code.c:474:4: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
-    if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 0) && ((function[0] == 0)){
-    ^~
-./cpu_multi_code.c:1011:0: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
- }
- 
-./cpu_multi_code.c:1011:1: error: expected declaration or statement at end of input
+./cpu_multi_code.c:1017:1: error: expected declaration or statement at end of input
  }
  ^
-./cpu_multi_code.c:1011:1: error: expected declaration or statement at end of input
+./cpu_multi_code.c:1017:1: error: expected declaration or statement at end of input
 ./cpu_multi_code.c: In function ‘MUX_MEMORY’:
 ./cpu_multi_code.c:199:17: warning: statement will never be executed [-Wswitch-unreachable]
              MAR = PC;
              ~~~~^~~~
-make: *** [Makefile:36: compile] Error 1
+make: *** [Makefile:43: nowarn] Error 1

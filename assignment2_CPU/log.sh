@@ -1,1 +1,1 @@
-make 2>&1 | tee errors.txt
+make nowarn 2>&1 | tee log.txt
