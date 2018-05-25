@@ -952,28 +952,34 @@ void finalize() {
     char* regid = NULL; // identificador do registrador (nome)
     reg* current_reg = NULL; // ponteiro para registrador
 
+    printf("PC = %d\t", PC);
+    printf("IR = %d\t", IR);
+    printf("MDR = %d\t", MDR);
+    printf("\n");
+    printf("A = %d\t", A);
+    printf("B = %d\t", B);
+    printf("AluOut = %d\n", ALU_OUT);
+    printf("Controle = []\n");
+
     // imprimir todos os registradores temporários
-    printf("\nREGISTRADORES:\n");
-    for (i = 0; i < 32; i++) {
-        // imprimir nome do registrador
-        current_reg = get_register(i);
-        regid = register_name(i);
-        printf("%s:\t", regid);
-        // imprimir conteúdo do registrador
-        printf("%d", (*current_reg));
-        printf("\n");
+    printf("Banco de Registradores\n");
+    for (i = 0; i < 8; i++) {
+        for (j = i; j < (i + (8 * 4)); j+=8) {
+            printf("R%02d (%s) = %d\t", i, regid, (*current_reg));
+        }
+        prinf("\n");
     }
 
-    printf("\nMEMÓRIA:\n");
+    printf("Memória (endereços a byte)\n");
     // imprimir as 32 primeiras posições de memória
-    for (i = 0; i < 32; i++) {
-        printf("MEMORIA[%d] = \t", i);
-        printf("%d", MEMORY[i]);
+    memory_pointer = (word*)memory_pointer;
+    for (i = 0; i < 28; i += 4) {
+        for (j = i; j < (i + (32 * 4)); j += 32) {
+            printf("[%02d] = %d\t", j, memory_pointer[j]);
+        }
         printf("\n");
     }
 }
-
-
 
 
 /*******************************************************/
