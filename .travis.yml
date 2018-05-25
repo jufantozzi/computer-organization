@@ -1,3 +1,3 @@
 language: c
-before-script: cd assignment2_CPU
+before_script: cd assignment2_CPU
 script: make
