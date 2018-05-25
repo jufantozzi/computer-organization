@@ -16,7 +16,7 @@
 #include <math.h>
 
 #define DEBUG 1
-#define IF_DEBUG if(DEBUG)
+#define IF_DEBUG if (DEBUG)
 
 #define GETBIT(x,p) (((x)>>(p))&1)
 
@@ -29,19 +29,6 @@ typedef char bit;
 typedef int word;
 
 /*******************************************************/
-
-
-
-/*
- * funcao
- * ----------------------------
- *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
- *
- */
 
 // +---------+
 // |  CLOCK  |
@@ -149,6 +136,119 @@ word write_data;
 reg* write_reg; // ponteiro para o registrador que receberá write data
 
 int PC;     // program counter
+
+/*
+ * funcao
+ * ----------------------------
+ *   O que ela faz:
+ *          * X recebe Y
+ *
+ *   argumento1:
+ *   argumento2:
+ *
+ */
+reg* get_register(int id) {
+	switch (id) {
+		case 0:
+			return &zero;
+			break;
+		case 1:
+			return &at;
+			break;
+		case 2:
+			return &v0;
+			break;
+		case 3:
+			return &v1;
+			break;
+		case 4:
+			return &a0;
+			break;
+		case 5:
+			return &a1;
+			break;
+		case 6:
+			return &a2;
+			break;
+		case 7:
+			return &a3;
+			break;
+		case 8:
+			return &t0;
+			break;
+		case 9:
+			return &t1;
+			break;
+		case 10:
+			return &t2;
+			break;
+		case 11:
+			return &t3;
+			break;
+		case 12:
+			return &t4;
+			break;
+		case 13:
+			return &t5;
+			break;
+		case 14:
+			return &t6;
+			break;
+		case 15:
+			return &t7;
+			break;
+		case 16:
+			return &s0;
+			break;
+		case 17:
+			return &s1;
+			break;
+		case 18:
+			return &s2;
+			break;
+		case 19:
+			return &s3;
+			break;
+		case 20:
+			return &s4;
+			break;
+		case 21:
+			return &s5;
+			break;
+		case 22:
+			return &s6;
+			break;
+		case 23:
+			return &s7;
+			break;
+		case 24:
+			return &t8;
+			break;
+		case 25:
+			return &t9;
+			break;
+		case 26:
+			return &k0;
+			break;
+		case 27:
+			return &k1;
+			break;
+		case 28:
+			return &gp;
+			break;
+		case 29:
+			return &sp;
+			break;
+		case 30:
+			return &fp;
+			break;
+		case 31:
+			return &ra;
+			break;
+	}
+	printf("ERRO: Registrador de número %d não encontrado.\n", id);
+	exit(0);
+}
 
 /*******************************************************/
 
@@ -297,7 +397,7 @@ void MUX_WRITE_DATA() {
 			switch (MemtoReg0) {
 				case 0:
 					// escreve de ALUOut em Banco de Registradores
-					write_data = ALUOUT;
+					write_data = ALUOut;
 					break;
 				case 1:
 					// escreve de MDR em banco de registradores[write_register]
@@ -510,50 +610,52 @@ void SIGNAL_EXTEND_16_TO_32() {
  */
 void ALU_CONTROL() {
 	switch(ALUOp1) {
-		case 0:	// não precisa checar o campo de função (instruções LW, SW, Branch)
+		// não precisa checar o campo de função (instruções LW, SW, Branch)
+		case 0:
 			switch(ALUOp0) {
 				case 0:	// add
-					ALUInput[2] = 0
-					ALUInput[1] = 1
-					ALUInput[0] = 0
+					ALUInput[2] = 0;
+					ALUInput[1] = 1;
+					ALUInput[0] = 0;
 					break;
 				case 1:	// subtract
-					ALUInput[2] = 1
-					ALUInput[1] = 1
-					ALUInput[0] = 0
+					ALUInput[2] = 1;
+					ALUInput[1] = 1;
+					ALUInput[0] = 0;
 					break;
 			}
 			break;
-		case 1: // precisa checar o campo de função e ALUOp0 sempre será 0
+		// precisa checar o campo de função e ALUOp0 sempre será 0
+		case 1:
 			// (ALUOp = 10 e Function = 100000) operação = add
-			if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 0) && ((function[0] == 0)) {
-				ALUInput[2] = 0
-				ALUInput[1] = 1
-				ALUInput[0] = 0
+			if ((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 0) && ((function[0] == 0))))))) {
+				ALUInput[2] = 0;
+				ALUInput[1] = 1;
+				ALUInput[0] = 0;
 			}
 			// (ALUOp = 10 e Function = 100010) operação = subtract
-			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 1) && ((function[0] == 0)) {
-				ALUInput[2] = 1
-				ALUInput[1] = 1
-				ALUInput[0] = 0
+			else if ((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 0) && ((function[1] == 1) && ((function[0] == 0))))))) {
+				ALUInput[2] = 1;
+				ALUInput[1] = 1;
+				ALUInput[0] = 0;
 			}
 			// (ALUOp = 10 e Function = 100100) operação = and
-			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 1) && ((function[1] == 0) && ((function[0] == 0))
-				ALUInput[2] = 0
-				ALUInput[1] = 0
-				ALUInput[0] = 0
+			else if ((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 1) && ((function[1] == 0) && ((function[0] == 0))))))) {
+				ALUInput[2] = 0;
+				ALUInput[1] = 0;
+				ALUInput[0] = 0;
 			}
 			// (ALUOp = 10 e Function = 100101) operação = or
-			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 1) && ((function[1] == 0) && ((function[0] == 1))
-				ALUInput[2] = 0
-				ALUInput[1] = 0
-				ALUInput[0] = 1
+			else if ((function[5] == 1) && ((function[4] == 0) && ((function[3] == 0) && ((function[2] == 1) && ((function[1] == 0) && ((function[0] == 1))))))) {
+				ALUInput[2] = 0;
+				ALUInput[1] = 0;
+				ALUInput[0] = 1;
 			}
 			// (ALUOp = 10 e Function = 101010) operação = set on less than
-			else if((function[5] == 1) && ((function[4] == 0) && ((function[3] == 1) && ((function[2] == 0) && ((function[1] == 1) && ((function[0] == 0))
-				ALUInput[2] = 1
-				ALUInput[1] = 1
-				ALUInput[0] = 1
+			else if ((function[5] == 1) && ((function[4] == 0) && ((function[3] == 1) && ((function[2] == 0) && ((function[1] == 1) && ((function[0] == 0))))))) {
+				ALUInput[2] = 1;
+				ALUInput[1] = 1;
+				ALUInput[0] = 1;
 			}
 			break;
 	}
@@ -571,27 +673,38 @@ void ALU_CONTROL() {
  */
 void ALU() {
 	// (ALUInput = 010) operação = add
-	if((ALUInput[2] == 0) && (ALUInput[1] == 1) && (ALUInput[0] == 0)) {
+	if ((ALUInput[2] == 0) && (ALUInput[1] == 1) && (ALUInput[0] == 0)) {
 		ALUResult = operator_1 + operator_2;
 	}
 	// (ALUInput = 110) operação = subtract
-	else if((ALUInput[2] == 1) && (ALUInput[1] == 1) && (ALUInput[0] == 0)) {
+	else if ((ALUInput[2] == 1) && (ALUInput[1] == 1) && (ALUInput[0] == 0)) {
 		ALUResult = operator_1 - operator_2;
 	}
 	// (ALUInput = 000) operação = and
-	else if((ALUInput[2] == 0) && (ALUInput[1] == 0) && (ALUInput[0] == 0)) {
+	else if ((ALUInput[2] == 0) && (ALUInput[1] == 0) && (ALUInput[0] == 0)) {
 		ALUResult = operator_1 & operator_2;
 	}
 	// (ALUInput = 001) operação = or
-	else if((ALUInput[2] == 0) && (ALUInput[1] == 1) && (ALUInput[0] == 1)) {
+	else if ((ALUInput[2] == 0) && (ALUInput[1] == 1) && (ALUInput[0] == 1)) {
 		ALUResult = operator_1 | operator_2;
 	}
 	// (ALUInput = 111) operação = set on less than
-	else if((ALUInput[2] == 1) && (ALUInput[1] == 1) && (ALUInput[0] == 1)) {
+	else if ((ALUInput[2] == 1) && (ALUInput[1] == 1) && (ALUInput[0] == 1)) {
 		(operator_1 < operator_2) ? (ALUResult = 1) : (ALUResult = 0);
 	}
 }
 
+
+/*
+ * funcao
+ * ----------------------------
+ *   O que ela faz:
+ *          * X recebe Y
+ *
+ *   argumento1:
+ *   argumento2:
+ *
+ */
 void ALU_OUT() {
 	ALUOut = ALUResult;
 }
@@ -815,6 +928,11 @@ char* register_name(int id) {
 }
 
 
+
+
+/*******************************************************/
+
+
 /*
  * funcao
  * ----------------------------
@@ -825,111 +943,6 @@ char* register_name(int id) {
  *   argumento2:
  *
  */
-reg* get_register(int id) {
-	switch (id) {
-		case 0:
-			return &zero;
-			break;
-		case 1:
-			return &at;
-			break;
-		case 2:
-			return &v0;
-			break;
-		case 3:
-			return &v1;
-			break;
-		case 4:
-			return &a0;
-			break;
-		case 5:
-			return &a1;
-			break;
-		case 6:
-			return &a2;
-			break;
-		case 7:
-			return &a3;
-			break;
-		case 8:
-			return &t0;
-			break;
-		case 9:
-			return &t1;
-			break;
-		case 10:
-			return &t2;
-			break;
-		case 11:
-			return &t3;
-			break;
-		case 12:
-			return &t4;
-			break;
-		case 13:
-			return &t5;
-			break;
-		case 14:
-			return &t6;
-			break;
-		case 15:
-			return &t7;
-			break;
-		case 16:
-			return &s0;
-			break;
-		case 17:
-			return &s1;
-			break;
-		case 18:
-			return &s2;
-			break;
-		case 19:
-			return &s3;
-			break;
-		case 20:
-			return &s4;
-			break;
-		case 21:
-			return &s5;
-			break;
-		case 22:
-			return &s6;
-			break;
-		case 23:
-			return &s7;
-			break;
-		case 24:
-			return &t8;
-			break;
-		case 25:
-			return &t9;
-			break;
-		case 26:
-			return &k0;
-			break;
-		case 27:
-			return &k1;
-			break;
-		case 28:
-			return &gp;
-			break;
-		case 29:
-			return &sp;
-			break;
-		case 30:
-			return &fp;
-			break;
-		case 31:
-			return &ra;
-			break;
-	}
-	printf("ERRO: Registrador de número %d não encontrado.\n", id);
-	exit(0);
-}
-
-/*******************************************************/
-
 void initialize(const char* source) {
 	int i;
 	// instrução a ser lida do arquivo
@@ -984,12 +997,14 @@ void initialize(const char* source) {
 
 }
 
-/**
- * ESTADO 0
- * start()
- * Inicializa todos os sinais de controle,
- * memória e registradores
- */
+ /*
+  * start
+  * ----------------------------
+  * Inicializa todos os sinais de controle,
+  * memória e registradores
+  * Estado 0
+  *
+  */
 void start() {
 	int i;
 	// inicializar sinais de controle
@@ -1042,18 +1057,20 @@ void finalize() {
 	printf("\n");
 	printf("A = %d\t", A);
 	printf("B = %d\t", B);
-	printf("AluOut = %d\n", ALU_OUT);
+	printf("AluOut = %d\n", ALUOut);
 	printf("Controle = []\n");
-
+	printf("\n");
 	// imprimir todos os registradores temporários
 	printf("Banco de Registradores\n");
 	for (i = 0; i < 8; i++) {
 		for (j = i; j < (i + (8 * 4)); j+=8) {
+			regid = register_name(j);
+			current_reg = get_register(j);
 			printf("R%02d (%s) = %d\t", i, regid, (*current_reg));
 		}
-		prinf("\n");
+		printf("\n");
 	}
-
+	printf("\n");
 	printf("Memória (endereços a byte)\n");
 	// imprimir as 32 primeiras posições de memória
 	memory_pointer = (word*)memory_pointer;
@@ -1091,11 +1108,13 @@ int main(int argc, char const *argv[]) {
 	// inicializar sinais de controle
 	start();
 
+	finalize();
+
 	// ciclos
 	// executar instruções
-	while (TRUE) {
-
-	}
+	// while (TRUE) {
+		// ciclo
+	// }
 
 	return 0;
 }
