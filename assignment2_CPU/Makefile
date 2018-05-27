@@ -27,7 +27,6 @@ INCLUDES = .
 
 # compiler flags
 # FLAGS = -g -std=c99 -lm -Wall -pedantic
-# SUPPRESS = -g -Wformat=0 -lm
 FLAGS = -g -lm
 
 # in case ANSI C is necessary
@@ -40,9 +39,6 @@ compile:
 
 run:
 	$(BINARY) $(BIN)
-
-nowarn:
-	$(CC) -o $(BINARY) -I $(INCLUDES) $(SRC) $(SUPPRESS)
 
 debug:
 	valgrind --leak-check=full --show-reachable=yes --track-origins=yes $(BINARY)
