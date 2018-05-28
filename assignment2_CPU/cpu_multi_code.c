@@ -87,12 +87,13 @@ bit rs[5];
 bit rt[5];
 bit rd[5];
 bit immediate[16];
-bit jump_addr[26];
+//jump_addr começará com 26 bits quando sair do IR
+bit jump_addr[32];
 
 // +------------------------+
 // | BANCO DE REGISTRADORES |
 // +------------------------+
-typedef int reg;
+typedef unsigned int reg;
 reg zero;   // 0
 reg at;     // 1
 reg v0;     // 2
@@ -132,10 +133,11 @@ reg MAR;    // memory address register
 reg IR;     // instruction register
 reg MDR;    // memory buffer register
 
-word write_data;
+word reg_write_data;
 reg* write_reg; // ponteiro para o registrador que receberá write data
 
-int PC;     // program counter
+reg PC;     // program counter
+word pc_write_data; // saida do mux_pc
 
 /*
  * funcao
@@ -306,13 +308,17 @@ bit next_state[5];
 // +---------------------+
 // | UNIDADES FUNCIONAIS |
 // +---------------------+
-/**
-* funcao()
-* SINAL DE CONTROLE: IORD
-* 0 - PEGA O VALOR DE PC
-* 1 - PEGA O VALOR DE ALUOUT
-* SAIDA: PARA ADDRESS EM MEMORY
-*/
+
+/*
+ * funcao
+ * ----------------------------
+ *   O que ela faz:
+ *          * X recebe Y
+ *
+ *   argumento1:
+ *   argumento2:
+ *
+ */
 void MUX_MEMORY() {
 	switch (IorD) {
 			MAR = PC;
@@ -320,6 +326,19 @@ void MUX_MEMORY() {
 		case 1:
 			MAR = ALUOut;
 			break;
+	}
+}
+
+/**
+* funcao()
+* SINAL DE CONTROLE: IORD
+* 0 - PEGA O VALOR DE PC
+* 1 - PEGA O VALOR DE ALUOUT
+* SAIDA: PARA ADDRESS EM MEMORY
+*/
+void PROGRAM_COUNTER() {
+	if (PCControl) {
+		PC = pc_write_data;
 	}
 }
 
@@ -397,17 +416,17 @@ void MUX_WRITE_DATA() {
 			switch (MemtoReg0) {
 				case 0:
 					// escreve de ALUOut em Banco de Registradores
-					write_data = ALUOut;
+					reg_write_data = ALUOut;
 					break;
 				case 1:
 					// escreve de MDR em banco de registradores[write_register]
-					write_data = MDR;
+					reg_write_data = MDR;
 					break;
 			}
 		  break;
 	  case 1:
 		  // escreve de PC em banco de registradores[write_register]
-		  write_data = PC;
+		  reg_write_data = PC;
 		  break;
   }
 }
@@ -488,23 +507,26 @@ void MUX_PC() {
 			switch (PCSource0) {
 				case 0:
 					// PC RECEBE ALU RESULT (SAIDA DA ULA)
-					PC = ALUResult;
+					pc_write_data = ALUResult;
 					break;
 				case 1:
 					// PC RECEBE ALUOUT
-					PC = ALUOut;
+					pc_write_data = ALUOut;
 					break;
 			}
 			break;
 		case 1:
 			switch (PCSource0) {
 				case 0:
-					// PC RECEBE jump_addr[26] << 2
-					PC = bin2dec(jump_addr, 26) << 2;
+					// PC RECEBE PC[31..28] + (jump_addr[26..0] << 2)
+					pc_write_data = 0;
+					for(i = 0; i < 4; i++)
+						pc_write_data += GETBIT(PC, 31-i) * ((unsigned int)pow(2, 31-i));
+					pc_write_data += (bin2dec(jump_addr, 26) << 2);
 					break;
 				case 1:
-					// PC RECEBE DE A
-					PC = A;
+					// PC RECEBE A
+					pc_write_data = A;
 					break;
 			}
 			break;
@@ -580,7 +602,7 @@ void IR_SET() {
  */
 void REGISTER_BANK() {
 	if (RegWrite) {
-		(*write_reg) = write_data;
+		(*write_reg) = reg_write_data;
 	}
 }
 
