@@ -521,7 +521,7 @@ void MUX_PC() {
 					// PC RECEBE PC[31..28] + (jump_addr[26..0] << 2)
 					pc_write_data = 0;
 					for(i = 0; i < 4; i++)
-						pc_write_data += GET_BIT(PC, 31-i) * ((unsigned int)pow(2, 31-i));
+						pc_write_data += GETBIT(PC, 31-i) * ((unsigned int)pow(2, 31-i));
 					pc_write_data += (bin2dec(jump_addr, 26) << 2);
 					break;
 				case 1:
