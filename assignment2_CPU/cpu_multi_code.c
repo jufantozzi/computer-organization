@@ -13,7 +13,15 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+// +---------+
+// |  sqrt   |
+// +---------+
 #include <math.h>
+// +---------+
+// |  memcpy |
+// +---------+
+#include <string.h>
 
 #define DEBUG 1
 #define IF_DEBUG if (DEBUG)
@@ -24,9 +32,9 @@
 #define FALSE 0
 
 typedef char boolean;
-typedef char byte;
-typedef char bit;
-typedef int word;
+typedef unsigned char byte;
+typedef unsigned char bit;
+typedef unsigned int word;
 
 /*******************************************************/
 
@@ -73,8 +81,9 @@ boolean clock = FALSE;
 // | MEMÓRIA |
 // +---------+
 #define MAX_SIZE 128
-byte MEMORY[MAX_SIZE];
-byte* memory_pointer;
+byte MEMORY[MAX_SIZE];      // memória (vetor de bytes)
+byte* memory_pointer;       // acessar bytes da memória individualmente
+word* memory_word_pointer;  // acessar bytes em blocos de tamanho da palavra
 
 /*******************************************************/
 
@@ -257,7 +266,6 @@ reg* get_register(int id) {
 // +--------------------+
 // |        ULA         |
 // +--------------------+
-
 reg A; // read data 1
 reg B; // read data 2
 bit ALUInput[3]; // bits que definem quais operações a ULA deverá executar
@@ -488,7 +496,7 @@ void MUX_ALU_2() {
 					break;
 			}
 		  break;
-  }
+    }
 }
 
 /**
@@ -968,7 +976,7 @@ char* register_name(int id) {
 void initialize(const char* source) {
 	int i;
 	// instrução a ser lida do arquivo
-	int instruction;
+    unsigned int instruction;
 	// conta quantas instruções foram lidas para indexar memória
 	int instr_counter;
 	reg* current_reg = NULL;
@@ -984,19 +992,22 @@ void initialize(const char* source) {
 	}
 
 	// inicializar memória
-	memory_pointer = MEMORY;
+    // acessar posição inicial (byte)
+    memory_pointer = (byte*)(&(MEMORY));
+    // escrever 0 em todos os bytes
 	for (i = 0; i < MAX_SIZE; i++) {
-		MEMORY[i] = 0;
+        memory_pointer = (byte*)(&(MEMORY[i]));
+        (*memory_pointer) = 0;
 	}
 
 	// ler instruções do código fonte
-	instr_counter = 0;
+    // acessar endereço inicial da memória
+    memory_word_pointer = (word*)(MEMORY);
 	while (fscanf(bin, "%d ", &instruction) != EOF) {
-		// armazenar instruções na memória
-		memory_pointer = (word*)memory_pointer;
-		memory_pointer[instr_counter] = instruction;
-		memory_pointer = (byte*)memory_pointer;
-		instr_counter += 1;
+        // copiar instrução para dentro da memória (tamanho = 1 word)
+        (*memory_word_pointer) = instruction;
+        // ir para próxima posição (+ 4 bytes)
+        memory_word_pointer += 1;
 	}
 
 	// fechar arquivo do código fonte
@@ -1073,6 +1084,9 @@ void finalize() {
 	char* regid = NULL; // identificador do registrador (nome)
 	reg* current_reg = NULL; // ponteiro para registrador
 
+    // status da saída
+    printf("Status da Saída: Término devido a...\n");
+
 	printf("PC = %d\t", PC);
 	printf("IR = %d\t", IR);
 	printf("MDR = %d\t", MDR);
@@ -1082,6 +1096,7 @@ void finalize() {
 	printf("AluOut = %d\n", ALUOut);
 	printf("Controle = []\n");
 	printf("\n");
+
 	// imprimir todos os registradores temporários
 	printf("Banco de Registradores\n");
 	for (i = 0; i < 8; i++) {
@@ -1093,18 +1108,21 @@ void finalize() {
 		printf("\n");
 	}
 	printf("\n");
+
 	printf("Memória (endereços a byte)\n");
-	// imprimir as 32 primeiras posições de memória
-	memory_pointer = (word*)memory_pointer;
+	// imprimir as 32 primeiras posições de memória (em inteiros sem sinal)
+    word* word_pointer = (word*)(MEMORY);
+    // para manter formatação em colunas na sáida, acessamos utilizando índices i e j
+    // ponteiro de palavra vai acessar endereço de MEMORY[indice]
 	for (i = 0; i < 28; i += 4) {
+        word_pointer = (word*)(&(MEMORY[i]));
 		for (j = i; j < (i + (32 * 4)); j += 32) {
-			printf("[%02d] = %d\t", j, memory_pointer[j]);
+            word_pointer = (word*)(&MEMORY[j]);
+            printf("[%02d] = %u\t", j, (*word_pointer));
 		}
 		printf("\n");
 	}
 }
-
-
 /*******************************************************/
 
 // +-----------+
