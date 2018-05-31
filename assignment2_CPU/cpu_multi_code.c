@@ -733,7 +733,6 @@ void MUX_BNE() {
 void IR_SET() {
 	int i;
 
-	// IR = MDR
 	if (IRWrite) {
 		for (i = 0; i < 6; i++) {
 			op_code[i] = GETBIT(IR, 26+i);
@@ -909,7 +908,7 @@ void ALU_OUT() {
  */
  void CONTROL() {
 
-	 //Setando os sinais
+	 // setando os sinais
 	 RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
 
 	 RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
@@ -957,7 +956,7 @@ void ALU_OUT() {
 
 	 MemtoReg1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & state[4]);
 
-	 //Setando next state
+	 // setando next state
 	 next_state[0] = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
 					 (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
 						 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
@@ -994,6 +993,13 @@ void ALU_OUT() {
 
 	 next_state[4] = (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
 					 (state[0] & state[1] & state[2] & state[3] & !state[4]);
+	 
+	 // atualizando estado para o próximo ciclo
+	 state[0] = next_state[0];
+	 state[1] = next_state[1];
+	 state[2] = next_state[2];
+	 state[3] = next_state[3];
+	 state[4] = next_state[4];
 
  }
 
@@ -1183,20 +1189,20 @@ void finalize() {
 void cycle() {
     IF_DEBUG printf("Cycle #%d\n", cycles+1);
     MUX_MEMORY();
-    PROGRAM_COUNTER();
     MEMORY_BANK();
-    MUX_WRITE_REG();
-    MUX_WRITE_DATA();
+	IR_SET();
+	SIGNAL_EXTEND_16_TO_32();
     MUX_ALU_1();
     MUX_ALU_2();
-    MUX_PC();
-    MUX_BNE();
-    IR_SET();
-    REGISTER_BANK();
-    SIGNAL_EXTEND_16_TO_32();
-    ALU_CONTROL();
+	ALU_CONTROL();
     ALU();
-    ALU_OUT();
+    MUX_PC();
+	MUX_BNE();
+	MUX_WRITE_REG();
+    MUX_WRITE_DATA();
+	PROGRAM_COUNTER();
+	ALU_OUT();
+    REGISTER_BANK();
     CONTROL();
     IF_DEBUG cycles++;
 }
