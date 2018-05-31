@@ -1,0 +1,280 @@
+CICLO ATUAL: 0
+
+*** IR ***
+op_code: 000000
+function: 000000
+rs: 00000
+rt: 00000
+rd: 00000
+immediate: 0000000000000000
+jump_addr: 00000000000000000000000000000000
+
+*** REGISTRADORES ***
+R00 ($zero) = 0	R08 ($t0) = 0	R16 ($s0) = 0	R24 ($t8) = 0	
+R01 ($at) = 0	R09 ($t1) = 0	R17 ($s1) = 0	R25 ($t9) = 0	
+R02 ($v0) = 0	R10 ($t2) = 0	R18 ($s2) = 0	R26 ($k0) = 0	
+R03 ($v1) = 0	R11 ($t3) = 0	R19 ($s3) = 0	R27 ($k1) = 0	
+R04 ($a0) = 0	R12 ($t4) = 0	R20 ($s4) = 0	R28 ($gp) = 0	
+R05 ($a1) = 0	R13 ($t5) = 0	R21 ($s5) = 0	R29 ($sp) = 0	
+R06 ($a2) = 0	R14 ($t6) = 0	R22 ($s6) = 0	R30 ($fp) = 0	
+R07 ($a3) = 0	R15 ($t7) = 0	R23 ($s7) = 0	R31 ($ra) = 0	
+
+write_register: 00000
+MAR: 0
+IR: 0
+MDR: 0
+reg_write_data: 0
+PC: 0
+pc_write_data: 0
+
+*** ULA ***
+A: 0
+B: 0
+ALUInput: 000
+ALUResult: 0
+ALUOut: 0
+immediate_extended: 0
+operator_1: 0
+operator_2: 0
+ALU_zero: 0
+
+*** SINAIS DE CONTROLE ***
+RegDst0: 0
+RegDst1: 0
+RegWrite: 0
+ALUSrcA: 0
+ALUSrcB0: 1
+ALUSrcB1: 0
+ALUOp0: 0
+ALUOp1: 0
+PCSource0: 0
+PCSource1: 0
+PCWriteCond: 0
+PCWrite: 0
+IorD: 0
+MemRead: 1
+MemWrite: 0
+BNE: 0
+IRWrite: 0
+MemtoReg0: 0
+MemtoReg1: 0
+
+PCControl: 0
+
+*** SINAIS DE ESTADO ***
+state: 00000
+next_state: 00000
+
+********************
+********************
+
+CICLO ATUAL: 1
+
+*** IR ***
+op_code: 000000
+function: 000000
+rs: 00000
+rt: 00000
+rd: 00000
+immediate: 0000000000000000
+jump_addr: 00000000000000000000000000000000
+
+*** REGISTRADORES ***
+R00 ($zero) = 0	R08 ($t0) = 0	R16 ($s0) = 0	R24 ($t8) = 0	
+R01 ($at) = 0	R09 ($t1) = 0	R17 ($s1) = 0	R25 ($t9) = 0	
+R02 ($v0) = 0	R10 ($t2) = 0	R18 ($s2) = 0	R26 ($k0) = 0	
+R03 ($v1) = 0	R11 ($t3) = 0	R19 ($s3) = 0	R27 ($k1) = 0	
+R04 ($a0) = 0	R12 ($t4) = 0	R20 ($s4) = 0	R28 ($gp) = 0	
+R05 ($a1) = 0	R13 ($t5) = 0	R21 ($s5) = 0	R29 ($sp) = 0	
+R06 ($a2) = 0	R14 ($t6) = 0	R22 ($s6) = 0	R30 ($fp) = 0	
+R07 ($a3) = 0	R15 ($t7) = 0	R23 ($s7) = 0	R31 ($ra) = 0	
+
+write_register: 00000
+MAR: 0
+IR: 201326610
+MDR: 201326610
+reg_write_data: 0
+PC: 0
+pc_write_data: 4
+
+*** ULA ***
+A: 0
+B: 0
+ALUInput: 010
+ALUResult: 4
+ALUOut: 4
+immediate_extended: 0
+operator_1: 0
+operator_2: 4
+ALU_zero: 0
+
+*** SINAIS DE CONTROLE ***
+RegDst0: 0
+RegDst1: 0
+RegWrite: 0
+ALUSrcA: 0
+ALUSrcB0: 1
+ALUSrcB1: 0
+ALUOp0: 0
+ALUOp1: 0
+PCSource0: 0
+PCSource1: 0
+PCWriteCond: 0
+PCWrite: 1
+IorD: 0
+MemRead: 1
+MemWrite: 0
+BNE: 0
+IRWrite: 1
+MemtoReg0: 0
+MemtoReg1: 0
+
+PCControl: 0
+
+*** SINAIS DE ESTADO ***
+state: 10000
+next_state: 10000
+
+********************
+********************
+
+CICLO ATUAL: 2
+
+*** IR ***
+op_code: 110000
+function: 010010
+rs: 00000
+rt: 00000
+rd: 00000
+immediate: 0100100000000000
+jump_addr: 01001000000000000000000000000000
+
+*** REGISTRADORES ***
+R00 ($zero) = 0	R08 ($t0) = 0	R16 ($s0) = 0	R24 ($t8) = 0	
+R01 ($at) = 0	R09 ($t1) = 0	R17 ($s1) = 0	R25 ($t9) = 0	
+R02 ($v0) = 0	R10 ($t2) = 0	R18 ($s2) = 0	R26 ($k0) = 0	
+R03 ($v1) = 0	R11 ($t3) = 0	R19 ($s3) = 0	R27 ($k1) = 0	
+R04 ($a0) = 0	R12 ($t4) = 0	R20 ($s4) = 0	R28 ($gp) = 0	
+R05 ($a1) = 0	R13 ($t5) = 0	R21 ($s5) = 0	R29 ($sp) = 0	
+R06 ($a2) = 0	R14 ($t6) = 0	R22 ($s6) = 0	R30 ($fp) = 0	
+R07 ($a3) = 0	R15 ($t7) = 0	R23 ($s7) = 0	R31 ($ra) = 0	
+
+write_register: 00000
+MAR: 0
+IR: 201326610
+MDR: 201326610
+reg_write_data: 4
+PC: 4
+pc_write_data: 4
+
+*** ULA ***
+A: 0
+B: 0
+ALUInput: 010
+ALUResult: 4
+ALUOut: 4
+immediate_extended: 18
+operator_1: 0
+operator_2: 4
+ALU_zero: 0
+
+*** SINAIS DE CONTROLE ***
+RegDst0: 0
+RegDst1: 0
+RegWrite: 0
+ALUSrcA: 0
+ALUSrcB0: 1
+ALUSrcB1: 1
+ALUOp0: 0
+ALUOp1: 0
+PCSource0: 0
+PCSource1: 0
+PCWriteCond: 0
+PCWrite: 0
+IorD: 0
+MemRead: 0
+MemWrite: 0
+BNE: 0
+IRWrite: 0
+MemtoReg0: 0
+MemtoReg1: 0
+
+PCControl: 1
+
+*** SINAIS DE ESTADO ***
+state: 10001
+next_state: 10001
+
+********************
+********************
+
+CICLO ATUAL: 3
+
+*** IR ***
+op_code: 110000
+function: 010010
+rs: 00000
+rt: 00000
+rd: 00000
+immediate: 0100100000000000
+jump_addr: 01001000000000000000000000000000
+
+*** REGISTRADORES ***
+R00 ($zero) = 0	R08 ($t0) = 0	R16 ($s0) = 0	R24 ($t8) = 0	
+R01 ($at) = 0	R09 ($t1) = 0	R17 ($s1) = 0	R25 ($t9) = 0	
+R02 ($v0) = 0	R10 ($t2) = 0	R18 ($s2) = 0	R26 ($k0) = 0	
+R03 ($v1) = 0	R11 ($t3) = 0	R19 ($s3) = 0	R27 ($k1) = 0	
+R04 ($a0) = 0	R12 ($t4) = 0	R20 ($s4) = 0	R28 ($gp) = 0	
+R05 ($a1) = 0	R13 ($t5) = 0	R21 ($s5) = 0	R29 ($sp) = 0	
+R06 ($a2) = 0	R14 ($t6) = 0	R22 ($s6) = 0	R30 ($fp) = 0	
+R07 ($a3) = 0	R15 ($t7) = 0	R23 ($s7) = 0	R31 ($ra) = 0	
+
+write_register: 00000
+MAR: 4
+IR: 201326610
+MDR: 201326610
+reg_write_data: 4
+PC: 4
+pc_write_data: 76
+
+*** ULA ***
+A: 0
+B: 0
+ALUInput: 010
+ALUResult: 76
+ALUOut: 76
+immediate_extended: 18
+operator_1: 4
+operator_2: 72
+ALU_zero: 0
+
+*** SINAIS DE CONTROLE ***
+RegDst0: 0
+RegDst1: 1
+RegWrite: 1
+ALUSrcA: 0
+ALUSrcB0: 0
+ALUSrcB1: 0
+ALUOp0: 0
+ALUOp1: 0
+PCSource0: 0
+PCSource1: 1
+PCWriteCond: 0
+PCWrite: 0
+IorD: 0
+MemRead: 0
+MemWrite: 0
+BNE: 0
+IRWrite: 0
+MemtoReg0: 0
+MemtoReg1: 0
+
+PCControl: 0
+
+*** SINAIS DE ESTADO ***
+state: 00000
+next_state: 00000
+
+********************
+********************
+

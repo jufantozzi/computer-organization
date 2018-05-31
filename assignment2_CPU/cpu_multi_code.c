@@ -52,6 +52,12 @@ typedef unsigned int word;
 /*******************************************************/
 
 // +----------+
+// | DEBUGGER |
+// +----------+
+int cycles = 0;
+FILE* f_debug = NULL;
+
+// +----------+
 // |  STATUS  |
 // +----------+
 int status; // status da saída
@@ -59,7 +65,6 @@ int status; // status da saída
 // +----------------------+
 // |  FUNÇÕES AUXILIARES  |
 // +----------------------+
-int cycles = 0;
 
 /*
  * bin2dec
@@ -993,7 +998,7 @@ void ALU_OUT() {
 
 	 next_state[4] = (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
 					 (state[0] & state[1] & state[2] & state[3] & !state[4]);
-	 
+
 	 // atualizando estado para o próximo ciclo
 	 state[0] = next_state[0];
 	 state[1] = next_state[1];
@@ -1187,7 +1192,6 @@ void finalize() {
  *
  */
 void cycle() {
-    IF_DEBUG printf("Cycle #%d\n", cycles+1);
     MUX_MEMORY();
     MEMORY_BANK();
 	IR_SET();
@@ -1204,7 +1208,151 @@ void cycle() {
 	ALU_OUT();
     REGISTER_BANK();
     CONTROL();
-    IF_DEBUG cycles++;
+    cycles++;
+}
+
+
+/*
+ * debugger
+ * ----------------------------
+ * Escreve no arquivo 'log.txt' o conteúdo
+ * de todas os sinais e registradores da simulação.
+ * É chamado após cada ciclo.
+ *
+ */
+void debugger() {
+    reg* current_reg = NULL;
+    char* regid = NULL;
+    int i, j;
+
+    fprintf(f_debug, "CICLO ATUAL: %d\n\n", cycles);
+    fprintf(f_debug, "*** IR ***\n");
+    fprintf(f_debug, "op_code: ");
+    for (i = 0; i < 6; i++) {
+        fprintf(f_debug, "%d", op_code[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "function: ");
+    for (i = 0; i < 6; i++) {
+        fprintf(f_debug, "%d", function[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "rs: ");
+    for (i = 0; i < 5; i++) {
+        fprintf(f_debug, "%d", rs[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "rt: ");
+    for (i = 0; i < 5; i++) {
+        fprintf(f_debug, "%d", rt[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "rd: ");
+    for (i = 0; i < 5; i++) {
+        fprintf(f_debug, "%d", rd[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "immediate: ");
+    for (i = 0; i < 16; i++) {
+        fprintf(f_debug, "%d", immediate[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "jump_addr: ");
+    for (i = 0; i < 32; i++) {
+        fprintf(f_debug, "%d", jump_addr[i]);
+    }
+    fprintf(f_debug, "\n");
+
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "*** REGISTRADORES ***\n");
+
+    for (i = 0; i < 8; i++) {
+		for (j = i; j < (i + (8 * 4)); j+=8) {
+			regid = register_name(j);
+			current_reg = get_register(j);
+			fprintf(f_debug, "R%02d (%s) = %d\t", j, regid, (*current_reg));
+		}
+		fprintf(f_debug, "\n");
+	}
+	fprintf(f_debug, "\n");
+    fprintf(f_debug, "write_register: ");
+    for (i = 0; i < 5; i++) {
+        fprintf(f_debug, "%d", write_register[i]);
+    }
+
+    fprintf(f_debug, "\n");
+
+    fprintf(f_debug, "MAR: %d\n", MAR);
+    fprintf(f_debug, "IR: %d\n", IR);
+    fprintf(f_debug, "MDR: %d\n", MDR);
+
+    fprintf(f_debug, "reg_write_data: %d\n", reg_write_data);
+    fprintf(f_debug, "PC: %d\n", PC);
+    fprintf(f_debug, "pc_write_data: %d\n", pc_write_data);
+
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "*** ULA ***\n");
+
+    fprintf(f_debug, "A: %d\n", A);
+    fprintf(f_debug, "B: %d\n", B);
+    fprintf(f_debug, "ALUInput: ");
+    for (i = 0; i < 3; i++) {
+        fprintf(f_debug, "%d", ALUInput[i]);
+    }
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "ALUResult: %d\n", ALUResult);
+    fprintf(f_debug, "ALUOut: %d\n", ALUOut);
+    fprintf(f_debug, "immediate_extended: %d\n", immediate_extended);
+    fprintf(f_debug, "operator_1: %d\n", operator_1);
+    fprintf(f_debug, "operator_2: %d\n", operator_2);
+    fprintf(f_debug, "ALU_zero: %d\n", ALU_zero);
+
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "*** SINAIS DE CONTROLE ***\n");
+
+    fprintf(f_debug, "RegDst0: %d\n", RegDst0);
+    fprintf(f_debug, "RegDst1: %d\n", RegDst1);
+    fprintf(f_debug, "RegWrite: %d\n", RegWrite);
+    fprintf(f_debug, "ALUSrcA: %d\n", ALUSrcA);
+    fprintf(f_debug, "ALUSrcB0: %d\n", ALUSrcB0);
+    fprintf(f_debug, "ALUSrcB1: %d\n", ALUSrcB1);
+    fprintf(f_debug, "ALUOp0: %d\n", ALUOp0);
+    fprintf(f_debug, "ALUOp1: %d\n", ALUOp1);
+    fprintf(f_debug, "PCSource0: %d\n", PCSource0);
+    fprintf(f_debug, "PCSource1: %d\n", PCSource1);
+    fprintf(f_debug, "PCWriteCond: %d\n", PCWriteCond);
+    fprintf(f_debug, "PCWrite: %d\n", PCWrite);
+    fprintf(f_debug, "IorD: %d\n", IorD);
+    fprintf(f_debug, "MemRead: %d\n", MemRead);
+    fprintf(f_debug, "MemWrite: %d\n", MemWrite);
+    fprintf(f_debug, "BNE: %d\n", BNE);
+    fprintf(f_debug, "IRWrite: %d\n", IRWrite);
+    fprintf(f_debug, "MemtoReg0: %d\n", MemtoReg0);
+    fprintf(f_debug, "MemtoReg1: %d\n", MemtoReg1);
+
+    fprintf(f_debug, "\n");
+
+    fprintf(f_debug, "PCControl: %d\n", PCControl);
+
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "*** SINAIS DE ESTADO ***\n");
+
+    fprintf(f_debug, "state: ");
+    for (i = 0; i < 5; i++) {
+        fprintf(f_debug, "%d", state[i]);
+    }
+    fprintf(f_debug, "\n");
+
+    fprintf(f_debug, "next_state: ");
+    for (i = 0; i < 5; i++) {
+        fprintf(f_debug, "%d", next_state[i]);
+    }
+    fprintf(f_debug, "\n");
+
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "********************\n");
+    fprintf(f_debug, "********************\n");
+    fprintf(f_debug, "\n");
 }
 
 /*******************************************************/
@@ -1223,7 +1371,15 @@ int main(int argc, char const *argv[]) {
 		exit(1);
 	}
 
-	// abrir código fonte
+    // abrir arquivo de log
+    f_debug = fopen("log.txt", "w");
+    // checar integridade do arquivo de log
+	if (f_debug == NULL) {
+		printf("ERRO: Arquivo de log não abriu.\n");
+		exit(0);
+	}
+
+	// código fonte
 	source = argv[1];
 
 	// inicializar memória e registradores
@@ -1233,11 +1389,18 @@ int main(int argc, char const *argv[]) {
 	start();
 
     // teste com 3 ciclos (comparar com saída do PDF)
+    debugger();
     cycle();
+    debugger();
     cycle();
+    debugger();
     cycle();
+    debugger();
 
     finalize();
+
+    // fechar arquivo de log
+    fclose(f_debug);
 
 	return 0;
 }
