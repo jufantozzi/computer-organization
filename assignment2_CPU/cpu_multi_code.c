@@ -11,17 +11,25 @@
 /* Juliano Fantozzi               9791218          */
 /* Andre Luis Storino Junior      9293668          */
 
+
+// +------------------------+
+// |  DECISÕES DE PROJETO   |
+// +------------------------+
+/*
+* MUX possui como identificador a unidade funcional que ele dá a
+* resposta.
+* MUX_IDENTIFICADOR*
+*
+*  ANDI usa código de operação 11 do ALUOp
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 
-// +---------+
-// |  sqrt   |
-// +---------+
+// +--------+
+// |  pow   |
+// +--------+
 #include <math.h>
-// +---------+
-// |  memcpy |
-// +---------+
-#include <string.h>
 
 #define DEBUG 1
 #define IF_DEBUG if (DEBUG)
@@ -36,7 +44,17 @@ typedef unsigned char byte;
 typedef unsigned char bit;
 typedef unsigned int word;
 
+#define STATUS_INVALID_INSTR  0
+#define STATUS_INVALID_ACCESS 1
+#define STATUS_INVALID_ALU    2
+#define STATUS_INVALID_REG    3
+
 /*******************************************************/
+
+// +----------+
+// |  STATUS  |
+// +----------+
+int status; // status da saída
 
 // +---------+
 // |  CLOCK  |
@@ -67,13 +85,32 @@ boolean clock = FALSE;
 	return sum;
  }
 
-/*******************************************************/
 
-// Decisões de projeto
-// MUX possui como identificador a unidade funcional que ele dá a resposta
-// MUX_IDENTIFICADOR
+ /*
+  * check_status
+  * ----------------------------
+  *   Retorna mensagem de erro de acordo com o
+  *   status da saída.
+  */
+char* check_status() {
+    char* exit_message = NULL;
+    switch(status) {
+        case STATUS_INVALID_INSTR:
+            exit_message = "Término devido à tentativa de execução de instrução inválida.\n";
+            break;
+        case STATUS_INVALID_ACCESS:
+            exit_message = "Término devido a acesso inválido de memória.\n";
+            break;
+        case STATUS_INVALID_ALU:
+            exit_message = "Término devido à operação inválida da ULA.\n";
+            break;
+        case STATUS_INVALID_REG:
+            exit_message = "Término devido a acesso inválido ao Banco de Registradores.\n";
+            break;
+    }
+    return exit_message;
+}
 
-// - ANDI usa código de operação 11 do ALUOp
 
 /*******************************************************/
 
@@ -147,6 +184,10 @@ reg* write_reg; // ponteiro para o registrador que receberá write data
 
 reg PC;     // program counter
 word pc_write_data; // saida do mux_pc
+
+// +----------------------------------+
+// | FUNÇÕES - BANCO DE REGISTRADORES |
+// +----------------------------------+
 
 /*
  * funcao
@@ -255,6 +296,118 @@ reg* get_register(int id) {
 			break;
 		case 31:
 			return &ra;
+			break;
+	}
+	printf("ERRO: Registrador de número %d não encontrado.\n", id);
+	exit(0);
+}
+
+/*
+ * register_name
+ * ----------------------------
+ *   Retorna o nome (string) do registrador
+ *   com base em seu número
+ *
+ *   int id: valor identificador do registrador
+ *
+ */
+char* register_name(int id) {
+	switch (id) {
+		case 0:
+			return "$zero";
+			break;
+		case 1:
+			return "$at";
+			break;
+		case 2:
+			return "$v0";
+			break;
+		case 3:
+			return "$v1";
+			break;
+		case 4:
+			return "$a0";
+			break;
+		case 5:
+			return "$a1";
+			break;
+		case 6:
+			return "$a2";
+			break;
+		case 7:
+			return "$a3";
+			break;
+		case 8:
+			return "$t0";
+			break;
+		case 9:
+			return "$t1";
+			break;
+		case 10:
+			return "$t2";
+			break;
+		case 11:
+			return "$t3";
+			break;
+		case 12:
+			return "$t4";
+			break;
+		case 13:
+			return "$t5";
+			break;
+		case 14:
+			return "$t6";
+			break;
+		case 15:
+			return "$t7";
+			break;
+		case 16:
+			return "$s0";
+			break;
+		case 17:
+			return "$s1";
+			break;
+		case 18:
+			return "$s2";
+			break;
+		case 19:
+			return "$s3";
+			break;
+		case 20:
+			return "$s4";
+			break;
+		case 21:
+			return "$s5";
+			break;
+		case 22:
+			return "$s6";
+			break;
+		case 23:
+			return "$s7";
+			break;
+		case 24:
+			return "$t8";
+			break;
+		case 25:
+			return "$t9";
+			break;
+		case 26:
+			return "$k0";
+			break;
+		case 27:
+			return "$k1";
+			break;
+		case 28:
+			return "$gp";
+			break;
+		case 29:
+			return "$sp";
+			break;
+		case 30:
+			return "$fp";
+			break;
+		case 31:
+			return "$ra";
 			break;
 	}
 	printf("ERRO: Registrador de número %d não encontrado.\n", id);
@@ -749,7 +902,7 @@ void ALU_OUT() {
  *   argumento2:
  *
  */
- void CONTROL(char* op) {
+ void CONTROL() {
 
 	 //Setando os sinais
 	 RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
@@ -841,127 +994,9 @@ void ALU_OUT() {
 
 /*******************************************************/
 
-// +----------------------------------+
-// | FUNÇÕES - BANCO DE REGISTRADORES |
-// +----------------------------------+
-
-/*
- * register_name
- * ----------------------------
- *   Retorna o nome (string) do registrador
- *   com base em seu número
- *
- *   int id: valor identificador do registrador
- *
- */
-char* register_name(int id) {
-	switch (id) {
-		case 0:
-			return "$zero";
-			break;
-		case 1:
-			return "$at";
-			break;
-		case 2:
-			return "$v0";
-			break;
-		case 3:
-			return "$v1";
-			break;
-		case 4:
-			return "$a0";
-			break;
-		case 5:
-			return "$a1";
-			break;
-		case 6:
-			return "$a2";
-			break;
-		case 7:
-			return "$a3";
-			break;
-		case 8:
-			return "$t0";
-			break;
-		case 9:
-			return "$t1";
-			break;
-		case 10:
-			return "$t2";
-			break;
-		case 11:
-			return "$t3";
-			break;
-		case 12:
-			return "$t4";
-			break;
-		case 13:
-			return "$t5";
-			break;
-		case 14:
-			return "$t6";
-			break;
-		case 15:
-			return "$t7";
-			break;
-		case 16:
-			return "$s0";
-			break;
-		case 17:
-			return "$s1";
-			break;
-		case 18:
-			return "$s2";
-			break;
-		case 19:
-			return "$s3";
-			break;
-		case 20:
-			return "$s4";
-			break;
-		case 21:
-			return "$s5";
-			break;
-		case 22:
-			return "$s6";
-			break;
-		case 23:
-			return "$s7";
-			break;
-		case 24:
-			return "$t8";
-			break;
-		case 25:
-			return "$t9";
-			break;
-		case 26:
-			return "$k0";
-			break;
-		case 27:
-			return "$k1";
-			break;
-		case 28:
-			return "$gp";
-			break;
-		case 29:
-			return "$sp";
-			break;
-		case 30:
-			return "$fp";
-			break;
-		case 31:
-			return "$ra";
-			break;
-	}
-	printf("ERRO: Registrador de número %d não encontrado.\n", id);
-	exit(0);
-}
-
-
-
-
-/*******************************************************/
-
+// +-----------+
+// | SIMULAÇÃO |
+// +-----------+
 
 /*
  * funcao
@@ -1079,14 +1114,49 @@ void start() {
  *   argumento2:
  *
  */
+void cycle() {
+    MUX_MEMORY();
+    PROGRAM_COUNTER();
+    MEMORY_BANK();
+    MUX_WRITE_REG();
+    MUX_WRITE_DATA();
+    MUX_ALU_1();
+    MUX_ALU_2();
+    MUX_PC();
+    MUX_BNE();
+    IR_SET();
+    REGISTER_BANK();
+    SIGNAL_EXTEND_16_TO_32();
+    ALU_CONTROL();
+    ALU();
+    ALU_OUT();
+    CONTROL();
+}
+
+
+/*
+ * funcao
+ * ----------------------------
+ *   O que ela faz:
+ *          * X recebe Y
+ *
+ *   argumento1:
+ *   argumento2:
+ *
+ */
 void finalize() {
 	int i, j;
 	char* regid = NULL; // identificador do registrador (nome)
 	reg* current_reg = NULL; // ponteiro para registrador
+    char* exit_message =  NULL; // mensagem de status da saída
 
-    // status da saída
-    printf("Status da Saída: Término devido a...\n");
+    // exibir status da saída
+    status = STATUS_INVALID_ALU; // teste
+    exit_message = check_status();
+    printf("Status da saída: %s", exit_message);
+    printf("\n");
 
+    // exibir registradores
 	printf("PC = %d\t", PC);
 	printf("IR = %d\t", IR);
 	printf("MDR = %d\t", MDR);
@@ -1097,7 +1167,7 @@ void finalize() {
 	printf("Controle = []\n");
 	printf("\n");
 
-	// imprimir todos os registradores temporários
+	// exibir banco de registradores
 	printf("Banco de Registradores\n");
 	for (i = 0; i < 8; i++) {
 		for (j = i; j < (i + (8 * 4)); j+=8) {
@@ -1109,6 +1179,7 @@ void finalize() {
 	}
 	printf("\n");
 
+    // exibir memória (a byte)
 	printf("Memória (endereços a byte)\n");
 	// imprimir as 32 primeiras posições de memória (em inteiros sem sinal)
     word* word_pointer = (word*)(MEMORY);
@@ -1125,9 +1196,9 @@ void finalize() {
 }
 /*******************************************************/
 
-// +-----------+
-// | SIMULAÇÃO |
-// +-----------+
+// +------+
+// | MAIN |
+// +------+
 int main(int argc, char const *argv[]) {
 
 	int i;
