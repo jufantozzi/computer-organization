@@ -56,14 +56,10 @@ typedef unsigned int word;
 // +----------+
 int status; // status da saída
 
-// +---------+
-// |  CLOCK  |
-// +---------+
-boolean clock = FALSE;
-
 // +----------------------+
 // |  FUNÇÕES AUXILIARES  |
 // +----------------------+
+int cycles = 0;
 
 /*
  * bin2dec
@@ -179,10 +175,10 @@ reg MAR;    // memory address register
 reg IR;     // instruction register
 reg MDR;    // memory buffer register
 
-word reg_write_data;
+word reg_write_data; // conteúdo a ser escrito em um registrador
 reg* write_reg; // ponteiro para o registrador que receberá write data
 
-reg PC;     // program counter
+reg PC;             // program counter
 word pc_write_data; // saida do mux_pc
 
 // +----------------------------------+
@@ -482,6 +478,7 @@ bit next_state[5];
  */
 void MUX_MEMORY() {
 	switch (IorD) {
+        case 0:
 			MAR = PC;
 			break;
 		case 1:
@@ -490,13 +487,16 @@ void MUX_MEMORY() {
 	}
 }
 
-/**
-* funcao()
-* SINAL DE CONTROLE: IORD
-* 0 - PEGA O VALOR DE PC
-* 1 - PEGA O VALOR DE ALUOUT
-* SAIDA: PARA ADDRESS EM MEMORY
-*/
+/*
+ * funcao
+ * ----------------------------
+ *   O que ela faz:
+ *          * X recebe Y
+ *
+ *   argumento1:
+ *   argumento2:
+ *
+ */
 void PROGRAM_COUNTER() {
 	if (PCControl) {
 		PC = pc_write_data;
@@ -515,13 +515,18 @@ void PROGRAM_COUNTER() {
  */
 void MEMORY_BANK() {
 	if (MemRead) {
-		MDR = MEMORY[MAR];
-		IR = MEMORY[MAR];
+        memory_word_pointer = (word*)(&(MEMORY[MAR]));
+		// MDR = MEMORY[MAR];
+        MDR = (*memory_word_pointer);
+		// IR = MEMORY[MAR];
+        IR = (*memory_word_pointer);
 	}
 
 	if (MemWrite) {
 		// B = registrador read data 2
-		MEMORY[MAR] = B;
+        memory_word_pointer = (word*)(&(MEMORY[MAR]));
+		// MEMORY[MAR] = B;
+        (*memory_word_pointer) = B;
 	}
 }
 
@@ -683,7 +688,7 @@ void MUX_PC() {
 					pc_write_data = 0;
 					for(i = 0; i < 4; i++)
 						pc_write_data += GETBIT(PC, 31-i) * ((unsigned int)pow(2, 31-i));
-					pc_write_data += (bin2dec(jump_addr, 26) << 2);
+	                    pc_write_data += (bin2dec(jump_addr, 26) << 2);
 					break;
 				case 1:
 					// PC RECEBE A
@@ -1114,36 +1119,6 @@ void start() {
  *   argumento2:
  *
  */
-void cycle() {
-    MUX_MEMORY();
-    PROGRAM_COUNTER();
-    MEMORY_BANK();
-    MUX_WRITE_REG();
-    MUX_WRITE_DATA();
-    MUX_ALU_1();
-    MUX_ALU_2();
-    MUX_PC();
-    MUX_BNE();
-    IR_SET();
-    REGISTER_BANK();
-    SIGNAL_EXTEND_16_TO_32();
-    ALU_CONTROL();
-    ALU();
-    ALU_OUT();
-    CONTROL();
-}
-
-
-/*
- * funcao
- * ----------------------------
- *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
- *
- */
 void finalize() {
 	int i, j;
 	char* regid = NULL; // identificador do registrador (nome)
@@ -1194,6 +1169,38 @@ void finalize() {
 		printf("\n");
 	}
 }
+
+/*
+ * funcao
+ * ----------------------------
+ *   O que ela faz:
+ *          * X recebe Y
+ *
+ *   argumento1:
+ *   argumento2:
+ *
+ */
+void cycle() {
+    IF_DEBUG printf("Cycle #%d\n", cycles+1);
+    MUX_MEMORY();
+    PROGRAM_COUNTER();
+    MEMORY_BANK();
+    MUX_WRITE_REG();
+    MUX_WRITE_DATA();
+    MUX_ALU_1();
+    MUX_ALU_2();
+    MUX_PC();
+    MUX_BNE();
+    IR_SET();
+    REGISTER_BANK();
+    SIGNAL_EXTEND_16_TO_32();
+    ALU_CONTROL();
+    ALU();
+    ALU_OUT();
+    CONTROL();
+    IF_DEBUG cycles++;
+}
+
 /*******************************************************/
 
 // +------+
@@ -1219,13 +1226,12 @@ int main(int argc, char const *argv[]) {
 	// inicializar sinais de controle
 	start();
 
-	finalize();
+    // teste com 3 ciclos (comparar com saída do PDF)
+    cycle();
+    cycle();
+    cycle();
 
-	// ciclos
-	// executar instruções
-	// while (TRUE) {
-		// ciclo
-	// }
+    finalize();
 
 	return 0;
 }
