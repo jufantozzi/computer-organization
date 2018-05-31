@@ -1168,14 +1168,14 @@ void finalize() {
     // exibir memória (a byte)
 	printf("Memória (endereços a byte)\n");
 	// imprimir as 32 primeiras posições de memória (em inteiros sem sinal)
-    word* word_pointer = (word*)(MEMORY);
+    memory_word_pointer = (word*)(MEMORY);
     // para manter formatação em colunas na sáida, acessamos utilizando índices i e j
     // ponteiro de palavra vai acessar endereço de MEMORY[indice]
 	for (i = 0; i < 28; i += 4) {
-        word_pointer = (word*)(&(MEMORY[i]));
+        memory_word_pointer = (word*)(&(MEMORY[i]));
 		for (j = i; j < (i + (32 * 4)); j += 32) {
-            word_pointer = (word*)(&MEMORY[j]);
-            printf("[%02d] = %u\t", j, (*word_pointer));
+            memory_word_pointer = (word*)(&MEMORY[j]);
+            printf("[%02d] = %u\t", j, (*memory_word_pointer));
 		}
 		printf("\n");
 	}
@@ -1348,6 +1348,19 @@ void debugger() {
         fprintf(f_debug, "%d", next_state[i]);
     }
     fprintf(f_debug, "\n");
+
+    fprintf(f_debug, "\n");
+    fprintf(f_debug, "*** MEMÓRIA ***\n");
+
+    memory_word_pointer = (word*)(MEMORY);
+	for (i = 0; i < 28; i += 4) {
+        memory_word_pointer = (word*)(&(MEMORY[i]));
+		for (j = i; j < (i + (32 * 4)); j += 32) {
+            memory_word_pointer = (word*)(&MEMORY[j]);
+            fprintf(f_debug, "[%02d] = %u\t", j, (*memory_word_pointer));
+		}
+		fprintf(f_debug, "\n");
+	}
 
     fprintf(f_debug, "\n");
     fprintf(f_debug, "********************\n");
