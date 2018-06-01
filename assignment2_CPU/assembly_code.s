@@ -68,14 +68,14 @@ main:
 #			addi $t4, $a3, 1		#44-11 $t4 = 4
 #			and  $t4, $t4, $a1  	#48-12 $t4 = 4
 #			bne $t4, $t4, naopula	#52-13 nao efetiva o bne, pois $t4 == $t4  :-)    (desloca 3 palavras à frente)
-#			addi $t8, $zero, 100	#56-14 carrega endereco para salva na memoria
+#			addi $t8, $zero, 100	#56-14 carrega endereco para salvar na memoria
 #			sw $t2, 0($t8) 			#60-15 salva $t2 (tem vlr 2) na memoria
 #			lw $s2, 0($t8) 			#64-16 recupera vlr 2 para s2
 #naopula:	jr $ra    				#68-17 fim de executa. Volta para a main.
 #main:		andi $a0, $a0, 0		#72-18 $a0 tem todos os bits como 0
 #			addi $a1, $zero, -1  	#76-19 $a1 tem todos os bits como 1
 #			andi $a2, $a1, 12		#80-20 $a2 tem 12 para ser decrementado em executa
-#			addi $t8, $zero, 1		#84-21 recupera endereco de executa (#01)
+#			addi $t8, $zero, 4		#84-21 recupera endereco de executa (#04)
 #			jalr $t8,$ra			#88-22 desvia fluxo para funcao executa
 #									###### FIM da execução
 #
@@ -103,5 +103,6 @@ main:
 #813957120 0x30840000  [main:]		andi $4, $4, 0           		; 18: andi $a0, $a0, 0		 #72-18 $a0 tem todos os bits como 0
 #537264127 0x2005ffff  				addi $5, $0, -1                 ; 19: addi $a1, $zero, -1    #76-19 $a1 tem todos os bits como 1
 #816185356 0x30a6000c  				andi $6, $5, 12                 ; 20: andi $a2, $a1, 12	 	 #80-20 $a2 tem 12 para ser decrementado em executa
-#538443777 0x20180001  				addi $24, $0, 1                 ; 21: addi $t8, $zero, 1	 #84-21 recupera endereco de executa (#01)
-#1461649408 0x571f0000  			jalr $24, $31                   ; 22: jalr $t8, $ra, $t8 	 #88-22 desvia fluxo para funcao executa  0101 0111 0001 1111 0000 0000 0000 0000 (0x571f0000)
+#538443780 0x20180004  				addi $24, $0, 4                 ; 21: addi $t8, $zero, 4	 #84-21 recupera endereco de executa (#04)
+#1461649408 0x571f0000  			jalr $24, $31                   ; 22: jalr $t8, $ra 	 	 #88-22 desvia fluxo para funcao executa  010101 11000 11111 0000 0000 0000 0000 (0x571f0000)
+#4294967295 0xffffffff				instrução invalida              ; 23: instrucao invalida     #92-23 instrucao invalida 1111 1111 1111 1111 1111 1111 1111 1111 (0xffffffff)
