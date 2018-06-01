@@ -471,6 +471,7 @@ bit next_state[5];
 // | UNIDADES FUNCIONAIS |
 // +---------------------+
 
+
 /*
  * funcao
  * ----------------------------
@@ -492,6 +493,7 @@ void MUX_MEMORY() {
 	}
 }
 
+
 /*
  * funcao
  * ----------------------------
@@ -507,6 +509,7 @@ void PROGRAM_COUNTER() {
 		PC = pc_write_data;
 	}
 }
+
 
 /*
  * funcao
@@ -535,6 +538,7 @@ void MEMORY_BANK() {
 	}
 }
 
+
 /**
  * funcao()
  * SINAL DE CONTROLE: REGDEST0 E REGDEST1
@@ -546,7 +550,6 @@ void MEMORY_BANK() {
  */
 
 // write_reg = get_register(bin2dec(write_register, 5));
-
 void MUX_WRITE_REG() {
 	int i;
 
@@ -662,6 +665,7 @@ void MUX_ALU_2() {
     }
 }
 
+
 /**
  * funcao()
  * SINAL DE CONTROLE: PCSORCE0 E PCSOURCE1
@@ -702,7 +706,10 @@ void MUX_PC() {
 			}
 			break;
 	  }
+      printf("pc_write_data: %d\n", pc_write_data);
+
 }
+
 
 /*
  * funcao
@@ -724,6 +731,7 @@ void MUX_BNE() {
 			break;
 	}
 }
+
 
 /*
  * funcao
@@ -760,6 +768,7 @@ void IR_SET() {
 	}
 }
 
+
 /*
  * funcao
  * ----------------------------
@@ -776,6 +785,7 @@ void REGISTER_BANK() {
 	}
 }
 
+
 /*
  * funcao
  * ----------------------------
@@ -789,6 +799,7 @@ void REGISTER_BANK() {
 void SIGNAL_EXTEND_16_TO_32() {
 	immediate_extended = bin2dec(immediate, 16);
 }
+
 
 /*
  * funcao
@@ -853,6 +864,7 @@ void ALU_CONTROL() {
 	}
 }
 
+
 /*
  * funcao
  * ----------------------------
@@ -900,6 +912,7 @@ void ALU() {
 void ALU_OUT() {
 	ALUOut = ALUResult;
 }
+
 
 /*
  * funcao
@@ -1080,6 +1093,7 @@ void initialize(const char* source) {
 	PC = 0;
 
 }
+
 
  /*
   * start
