@@ -44,23 +44,24 @@ typedef unsigned char byte;
 typedef unsigned char bit;
 typedef unsigned int word;
 
-#define STATUS_INVALID_INSTR  0
-#define STATUS_INVALID_ACCESS 1
-#define STATUS_INVALID_ALU    2
-#define STATUS_INVALID_REG    3
+#define STATUS_VALID 0
+#define STATUS_INVALID_INSTR  1
+#define STATUS_INVALID_ACCESS 2
+#define STATUS_INVALID_ALU    3
+#define STATUS_INVALID_REG    4
 
 /*******************************************************/
 
 // +----------+
 // | DEBUGGER |
 // +----------+
-int cycles = 0;
+int clocks = 0;
 FILE* f_debug = NULL;
 
 // +----------+
 // |  STATUS  |
 // +----------+
-int status; // status da saída
+int status = 0; // status da saída
 
 // +----------------------+
 // |  FUNÇÕES AUXILIARES  |
@@ -88,12 +89,12 @@ int status; // status da saída
 
 
  /*
-  * check_status
+  * status_message
   * ----------------------------
   *   Retorna mensagem de erro de acordo com o
   *   status da saída.
   */
-char* check_status() {
+char* status_message() {
     char* exit_message = NULL;
     switch(status) {
         case STATUS_INVALID_INSTR:
@@ -108,6 +109,8 @@ char* check_status() {
         case STATUS_INVALID_REG:
             exit_message = "Término devido a acesso inválido ao Banco de Registradores.\n";
             break;
+        case STATUS_VALID:
+            exit_message = ("Estado da saída ainda é válido.\n");
     }
     return exit_message;
 }
@@ -173,8 +176,6 @@ reg gp;     // 28
 reg sp;     // 29
 reg fp;     // 30
 reg ra;     // 31
-
-bit write_register[5];
 
 reg MAR;    // memory address register
 reg IR;     // instruction register
@@ -299,8 +300,8 @@ reg* get_register(int id) {
 			return &ra;
 			break;
 	}
-	printf("ERRO: Registrador de número %d não encontrado.\n", id);
-	exit(0);
+	// registrador inválido
+    return NULL;
 }
 
 /*
@@ -473,15 +474,12 @@ bit next_state[5];
 
 
 /*
- * funcao
+ * FUNCAO QUE SIMULA O MUX QUE FARÁ O ACESSO A MEMORIA
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
- *
- */
+ *          RECEBE: SINAL DE CONTROLE IORD
+ *          SAIDAL: ALTERA O VALOR DE MAR
+*/
 void MUX_MEMORY() {
 	switch (IorD) {
         case 0:
@@ -495,13 +493,11 @@ void MUX_MEMORY() {
 
 
 /*
- * funcao
+ * FUNCAO QUE SIMULA O FUNCIONAMENTO DE PC
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *          RECEBE: SINAL DE CONTROLE PCCONTROL
+ *          SAIDA: ATUALIZA O VALOR DE PC
  *
  */
 void PROGRAM_COUNTER() {
@@ -512,14 +508,11 @@ void PROGRAM_COUNTER() {
 
 
 /*
- * funcao
+ * FUNCAO QUE SIMULA O BANCO DE MEMORIA
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
- *
+ *          RECEBE: BITS DE CONTROLE MEMREAD E MEMREG
+ *          SAIDA: OPERACAO DE LEITURA OU ESCRITA NA MEMORIA
  */
 void MEMORY_BANK() {
 	if (MemRead) {
@@ -540,7 +533,7 @@ void MEMORY_BANK() {
 
 
 /**
- * funcao()
+ * FUNCAO QUE SIMULA A SELECAO DO REGISTRADOR QUE TERA SEU VALOR ALTERADO
  * SINAL DE CONTROLE: REGDEST0 E REGDEST1
  * 0 - PEGA O VALOR DE INSTRUCTION[20 .. 16]
  * 1 - PEGA O VALOR DE INSTRUCTION[15 .. 11]
@@ -549,10 +542,8 @@ void MEMORY_BANK() {
  * SAIDA: PARA WRITE REGISTER (REGISTERS)
  */
 
-// write_reg = get_register(bin2dec(write_register, 5));
 void MUX_WRITE_REG() {
 	int i;
-
   switch (RegDst1) {
 	  case 0:
 			switch (RegDst0) {
@@ -575,7 +566,7 @@ void MUX_WRITE_REG() {
 
 
 /**
- * funcao()
+ * FUNCAO QUE SIMULA O MUX RESPONSAVEL PELA SELECAO DO VALOR PARA SER ESCRITO EM UM REGISTRADOR
  * SINAL DE CONTROLE: MEMTOREG0 E MEMTOREG1
  * 0 - PEGA O VALOR DE ALUOUT
  * 1 - PEGA O VALOR DE MEM_DATA_REGISTER
@@ -584,30 +575,39 @@ void MUX_WRITE_REG() {
  * SAIDA: PARA WRITE DATA (REGISTERS)
  */
 void MUX_WRITE_DATA() {
-  int i;
-  switch (MemtoReg1) {
-	  case 0:
-			switch (MemtoReg0) {
-				case 0:
-					// escreve de ALUOut em Banco de Registradores
-					reg_write_data = ALUOut;
-					break;
-				case 1:
-					// escreve de MDR em banco de registradores[write_register]
-					reg_write_data = MDR;
-					break;
-			}
-		  break;
-	  case 1:
-		  // escreve de PC em banco de registradores[write_register]
-		  reg_write_data = PC;
-		  break;
-  }
+    int i;
+    // MEMTOREG
+    // 00 - ALUOut
+    // 01 - MDR
+    // 10 - PC
+    // ANALISE SEPARA DOS DOIS BITS DE CONTROLE
+    switch (MemtoReg1) {
+        case 0:
+            switch (MemtoReg0) {
+                case 0:
+                    // escreve de ALUOut em Banco de Registradores
+                    reg_write_data = ALUOut;
+                    break;
+                case 1:
+                    // escreve de MDR em banco de registradores[write_register]
+                    reg_write_data = MDR;
+                    break;
+            }
+            break;
+        case 1:
+            // escreve de PC em banco de registradores[write_register]
+            switch (MemtoReg0) {
+                case 0:
+                    reg_write_data = PC;
+                    break;
+            }
+            break;
+    }
 }
 
 
 /**
- * funcao()
+ * FUNCAO QUE SIMULA O MUX QUE SELECIONA O QUE SERA ENVIADO PARA A PRIMEIRA ENTRADA DA ULA
  * SINAL DE CONTROLE: ALUSRCA
  * 0 - PEGA O VALOR DE PC
  * 1 - PEGA O VALOR DE A (READ DATA 1 - REGISTERS)
@@ -628,7 +628,7 @@ void MUX_ALU_1() {
 
 
 /**
- * funcao()
+ * FUNCAO QUE SIMULA O MUX QUE SELECIONA O QUE SERA ENVIADO PARA A SEGUNDA ENTRADA DA ULA
  * SINAL DE CONTROLE: ALUSRCB0 E ALUSRCB1
  * 0 - PEGA O VALOR DE B (READ DATA 2 - REGISTERS)
  * 1 - PEGA O VALOR 4 (NÚMERO)
@@ -637,6 +637,7 @@ void MUX_ALU_1() {
  * SAIDA: ENTRADA 2 DA ALU
  */
 void MUX_ALU_2() {
+    //ANALISE COM BASE NOS DOIS BITS DE CONTROLE ALUSRCB
   switch (ALUSrcB1) {
 	  case 0:
 			switch (ALUSrcB0) {
@@ -667,7 +668,7 @@ void MUX_ALU_2() {
 
 
 /**
- * funcao()
+ * FUNCAO QUE SIMULA O FUNCIONAMENTO DO MUX QUE SELECIONA O QUE SERA ESCRITO EM PC
  * SINAL DE CONTROLE: PCSORCE0 E PCSOURCE1
  * 0 - PEGA O VALOR DE RESULTADO DA ULA
  * 1 - PEGA O VALOR DE ALUOUT
@@ -677,6 +678,7 @@ void MUX_ALU_2() {
  */
 void MUX_PC() {
 	int i;
+    // FAZENDO A ANALISE DOS DOIS BITS DE CONTROLE
 	switch (PCSource1) {
 		case 0:
 			switch (PCSource0) {
@@ -706,19 +708,15 @@ void MUX_PC() {
 			}
 			break;
 	  }
-      printf("pc_write_data: %d\n", pc_write_data);
-
 }
 
 
 /*
- * funcao
+ * FUNCAO QUE SIMULA O FUNCIONAMENTO DO MUX ADICIONADO RESPONSAVEL PELO BNE
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *          RECEBE: SAIDAS ZERO DA ULA
+ *          SAIDA: PERMITE ALTERAR PC PASSANDO POR UMA PORTA AND E OR
  *
  */
 void MUX_BNE() {
@@ -734,14 +732,11 @@ void MUX_BNE() {
 
 
 /*
- * funcao
+ * FUNCAO AUXILIAR PARA SETAR VALORES DO IR
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
- *
+ *      UTILIZANDO O VALOR DE IR BIT A BIT, SETA OS VALORES
+ *      QUE SAEM NOS BARRAMENTOS IR.
  */
 void IR_SET() {
 	int i;
@@ -770,30 +765,32 @@ void IR_SET() {
 
 
 /*
- * funcao
+ * FUNCAO QUE REPRESENTA O FUNCIONAMENTO DO BANCO DE REGISTRADORES
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *          ATUALIZA OS VALORES DE A E B PARA QUEPOSSAM SER UTILIZADOS PRINCIPALMENTE
+ *          NA ULA.
+ *          ANALISA O REGWRITE PARA SABER QUANTO SEVE SER ESCRITO UM VALOR NO BANCO DE
+ *          REGISTRADORES
  *
  */
 void REGISTER_BANK() {
+    A = *(get_register(bin2dec(rs, 5)));
+    B = *(get_register(bin2dec(rt, 5)));
+
 	if (RegWrite) {
+        // registrador recebe conteúdo
 		(*write_reg) = reg_write_data;
 	}
 }
 
 
 /*
- * funcao
+ * EXTENSAO DE SINAL DE 16 BITS PARA 32 BITS
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *          RECEBE O VALOR DE INSTRUCTION [15 .. 0] COM 16 BITS E MANDA PARA O MUX
+ *          DA ENTRADA B DA ULA, O VALOR COM EXTENSAO DE SINAL PARA 32 BITS
  *
  */
 void SIGNAL_EXTEND_16_TO_32() {
@@ -802,17 +799,17 @@ void SIGNAL_EXTEND_16_TO_32() {
 
 
 /*
- * funcao
+ *  FUNCAO QUE SIMULA O CONTROLE DA ULA FEITO PELA UNIDADE ALU CONTROL
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *          RECEBE: SINAL ALUOP QUE POSSUI DOIS BITS DE CONTROLE
+ *                  INSTRUCTION[5 ..0] PARA QUE SEJA ANALISADO QUAL OPERACAO DEVE SER FEITA
+ *          ENVIA: PARA A ULA A INTRUCAO DE QUAL OPERACAO DEVE SER REALIZADA
  *
  */
 void ALU_CONTROL() {
-	switch(ALUOp1) {
+    //ANALISE FEITA EM SWITCH POIS POSSUI DOIS BITS DE CONTROLE
+    switch(ALUOp1) {
 		// não precisa checar o campo de função (instruções LW, SW, Branch)
 		case 0:
 			switch(ALUOp0) {
@@ -866,13 +863,13 @@ void ALU_CONTROL() {
 
 
 /*
- * funcao
+ * FUNCAO QUE SIMULA UMA ULA COM OPERACOES ARITMETICAS PRE DETERMINADAS
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *          RECEBE: VALORES DE MUX_ALU_1 E MUX_ALU_2 QUE POR SUA VEZ PODEM OBTER OS VALORES
+ *                       DE DIFERENTES LOCAIS
+ *          SAIDA: RESULTADO DAS OPERACOES COM BASE NA OPERACAO DEFINIDA POR ALU CONTROL
+ *                 BIT ADICIONAL PARA INDICAR CASO A OPERACAO TENHA DADO ZERO OU NAO
  *
  */
 void ALU() {
@@ -900,13 +897,11 @@ void ALU() {
 
 
 /*
- * funcao
+ * FUNCAO QUE ARMAZENA A SAIDA DA ULA
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *        ARMAZENA O VALOR DE SAIDA DA ULA, PARA QUE POSSA SER USADA EM
+ *        OUTROS CICLOS
  *
  */
 void ALU_OUT() {
@@ -915,54 +910,84 @@ void ALU_OUT() {
 
 
 /*
- * funcao
+ * FUNCAO RESPONSAVEL POR SETAR OS BITS DE CONTROLE
+ * FUNCAO RESPOSAVEL POR CALCULAR O PROXIMO ESTADO
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
+ *         ANALISA COM BASE EM UMA PLA, QUANDO OS BITS SERAO SETADOS DEPENDENDO DE
+ *         CADA ESTADO.
  *
- *   argumento1:
- *   argumento2:
+ *         UTILIZA SOMENTE AS INFORMACOES DO ESTADOS
+ *         PARA CALCULAR PROXIMO ESTADO UTILIZA A INFORMACAO DO ESTADO ANTERIOR E
+ *         OS BITS DE OPERACAO (OPCODE)
  *
  */
  void CONTROL() {
+	 // ANALISANDO OS SINAIS DE CONTROLE COM BASE NOS VALORES DOS ESTADOS
 
-	 // setando os sinais
+     // ****** SINAIS DE CONTROLE ******
+     //REGDST POSSUI DOIS BITS
 	 RegDst0 = (state[0] & state[1] & state[2] & !state[3] & !state[4]);
 
-	 RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+	 RegDst1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+               (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
 
-	 RegWrite = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]) | (state[0] & state[1] & state[2] & !state[3] & !state[4]) |
-					 (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & state[3] & !state[4]) |
-						 (!state[0] & !state[1] & !state[2] & !state[3] & state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]); //conferido até aqui
+	 RegWrite = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]) |
+                (state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+			    (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                (state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+				(!state[0] & !state[1] & !state[2] & !state[3] & state[4]) |
+                (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
 
-	 ALUSrcA = (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
-					 (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
-						 (!state[0] & state[1] & state[2] & state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+	 ALUSrcA = (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
+               (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+			   (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+               (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+			   (!state[0] & state[1] & state[2] & state[3] & !state[4]) |
+               (state[0] & state[1] & state[2] & state[3] & !state[4]);
 
-	 ALUSrcB0 = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+     // ALUSRCB POSSUI DOIS BITS
+	 ALUSrcB0 = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) |
+                (state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
 
-	 ALUSrcB1 = (state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
-					 (!state[0] & !state[1] & state[2] & state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+	 ALUSrcB1 = (state[0] & !state[1] & !state[2] & !state[3] & !state[4]) |
+                (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
+				(!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
+                (state[0] & state[1] & state[2] & state[3] & !state[4]);
 
-	 ALUOp0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+     // ALUOP POSSUI DOIS BITS
+	 ALUOp0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+              (!state[0] & state[1] & state[2] & state[3] & !state[4]) |
+              (state[0] & state[1] & state[2] & state[3] & !state[4]);
 
-	 ALUOp1 = (!state[0] & state[1] & state[2] & !state[3] & !state[4]) | (state[0] & state[1] & state[2] & state[3] & !state[4]);
+	 ALUOp1 = (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
+              (state[0] & state[1] & state[2] & state[3] & !state[4]);
 
-	 PCSource0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
-					 (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+     //PCSOURCE POSSUI 2 BITS
+	 PCSource0 = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+                 (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+			     (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                 (!state[0] & state[1] & state[2] & state[3] & !state[4]);
 
-	 PCSource1 = (state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
-					 (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
+	 PCSource1 = (state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+                 (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+				 (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                 (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
 
-	 PCWriteCond = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) | (!state[0] & state[1] & state[2] & state[3] & !state[4]);
+	 PCWriteCond = (!state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+                   (!state[0] & state[1] & state[2] & state[3] & !state[4]);
 
-	 PCWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
-					 (!state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
-						 (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
+	 PCWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) |
+               (state[0] & !state[1] & !state[2] & state[3] & !state[4]) |
+			   (!state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+               (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+			   (state[0] & !state[1] & !state[2] & !state[3] & state[4]);
 
-	 IorD = (state[0] & state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
+	 IorD = (state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
+            (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
 
-	 MemRead = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (state[0] & state[1] & !state[2] & !state[3] & !state[4]);
+	 MemRead = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) |
+               (state[0] & state[1] & !state[2] & !state[3] & !state[4]);
 
 	 MemWrite = (state[0] & !state[1] & state[2] & !state[3] & !state[4]);
 
@@ -970,17 +995,36 @@ void ALU_OUT() {
 
 	 IRWrite = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]);
 
+     // MEMTOREG POSSUI 2 BITS
 	 MemtoReg0 = (!state[0] & !state[1] & state[2] & !state[3] & !state[4]);
 
-	 MemtoReg1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) | (state[0] & !state[1] & state[2] & !state[3] & state[4]);
+	 MemtoReg1 = (state[0] & state[1] & !state[2] & state[3] & !state[4]) |
+                 (state[0] & !state[1] & state[2] & !state[3] & state[4]);
 
-	 // setando next state
-	 next_state[0] = (!state[0] & !state[1] & !state[2] & !state[3] & !state[4]) | (!state[0] & state[1] & !state[2] & !state[3] & !state[4]) |
-					 (!state[0] & state[1] & state[2] & !state[3] & !state[4]) |
-						 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
-						 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
-						 (state[0] & !state[1] & state[2] & state[3] & !state[4]) |
-						 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]);
+
+     // ***** Equacoes de proximo estado: ******
+     // ESTADO ANTERIOR + OP_CODE (Caso tenha mais de um caminho)
+     // ATIVADO QUANDO: Numero do estado em binario possuir o bit em analise como 1
+
+     // ANALISE A PARTIR DO BIT MENOS SIGNIFICATIVO (NS0)
+                        // ESTADO 1
+     next_state[0] =    (!state[0] & !state[1] & !state[2] & !state[3] & !state[4] ) |
+                        // ESTADO 3
+                        (!state[0] & state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & op_code[5]) |
+                        // ESTADO 5
+                        (!state[0] & state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & op_code[3] & !op_code[4] & op_code[5]) |
+                        // ESTADO 7
+                        (!state[0] & state[1] & state[2] & !state[3] & !state[4] ) |
+                        // ESTADO 9
+                        (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+                        // ESTADO 11
+                        (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
+                        // ESTADO 13
+                        (!state[0] & !state[1] & state[2] & state[3] & !state[4] ) |
+                        // ESTADO 15
+                        (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & op_code[3] & !op_code[4] & !op_code[5]) |
+                        // ESTADO 17
+                        (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]);
 
 	 next_state[1] = (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[4] & op_code[5]) |
 					 (!state[0] & state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & op_code[5]) |
@@ -1004,7 +1048,7 @@ void ALU_OUT() {
 					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & op_code[1] & !op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
 					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
 					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & op_code[4] & !op_code[5]) |
-					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
+					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & !op_code[2] & op_code[3] & !op_code[4] & !op_code[5]) |
 					 (!state[0] & !state[1] & state[2] & state[3] & !state[4]) |
 					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & op_code[0] & !op_code[1] & op_code[2] & !op_code[3] & !op_code[4] & !op_code[5]) |
 					 (state[0] & !state[1] & !state[2] & !state[3] & !state[4] & !op_code[0] & !op_code[1] & op_code[2] & op_code[3] & !op_code[4] & !op_code[5]);
@@ -1028,13 +1072,10 @@ void ALU_OUT() {
 // +-----------+
 
 /*
- * funcao
+ *  INICIALIZAR TODOS OS COMPONENTES DO PROJETO
  * ----------------------------
  *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
+ *         INICIALIZA OS COMPONENTES PARA O VALORES CORRETOS
  *
  */
 void initialize(const char* source) {
@@ -1082,11 +1123,6 @@ void initialize(const char* source) {
 	for (i = 0; i < 32; i++) {
 		current_reg = get_register(i);
 		(*current_reg) = 0;
-	}
-
-	// inicializando o destino de escrita no banco de registradores
-	for(i = 0; i < 5; i++) {
-		write_register[i] = 0;
 	}
 
 	// inicializar PC p/ primeira posição válida
@@ -1151,8 +1187,7 @@ void finalize() {
     char* exit_message =  NULL; // mensagem de status da saída
 
     // exibir status da saída
-    status = STATUS_INVALID_ALU; // teste
-    exit_message = check_status();
+    exit_message = status_message();
     printf("Status da saída: %s", exit_message);
     printf("\n");
 
@@ -1195,34 +1230,81 @@ void finalize() {
 	}
 }
 
+/*******************************************************/
+
+// +----------------------+
+// | FUNCIONAMENTO DA CPU |
+// +----------------------+
+
 /*
- * funcao
+ * FUNCAO QUE SIMULA O FUNCIONAMENTO DE TODOS OS COMPONENTES DE ACORDO COM O CLOCK
  * ----------------------------
- *   O que ela faz:
- *          * X recebe Y
- *
- *   argumento1:
- *   argumento2:
- *
  */
-void cycle() {
+void set() {
     MUX_MEMORY();
-    MEMORY_BANK();
-	IR_SET();
-	SIGNAL_EXTEND_16_TO_32();
+    SIGNAL_EXTEND_16_TO_32();
     MUX_ALU_1();
     MUX_ALU_2();
-	ALU_CONTROL();
+    ALU_CONTROL();
     ALU();
-    MUX_PC();
-	MUX_BNE();
-	MUX_WRITE_REG();
+    MUX_BNE();
+    MUX_WRITE_REG();
     MUX_WRITE_DATA();
-	PROGRAM_COUNTER();
-	ALU_OUT();
+    MUX_PC();
+}
+/*
+ * FUNCAO QUE SIMULA O FUNCIONAMENTO DE TODOS OS COMPONENTES DE ACORDO COM O CLOCK
+ * ----------------------------
+ */
+void go() {
+    MEMORY_BANK();
+    IR_SET();
+    PROGRAM_COUNTER();
+    ALU_OUT();
     REGISTER_BANK();
     CONTROL();
-    cycles++;
+    clocks++;
+}
+
+/*******************************************************/
+
+
+/*
+ * check_status
+ * ----------------------------
+ * Verifica o estado da saída do programa,
+ * procurando por instruções ou acessos inválidos.
+ * Os estados estão definidos no cabeçalho, sendo
+ * STATUS_VALID 0, ou seja, enquanto a função não
+ * alterar esse valor para outro estado inválido
+ * (enquanto retorno for falso),
+ * a simulação continua rodando.
+ */
+int check_status() {
+    // checar acesso a memória
+    if (MAR > MAX_SIZE || MAR < 0) {
+        status = STATUS_INVALID_ACCESS;
+    }
+    // checar se instrução é válida
+    // checar código de operação?
+    //  TODO
+    // if () {
+    //     status = STATUS_INVALID_INSTR;
+    // }
+
+    // operação inválida da ULA
+    //  TODO ??
+    //
+    // if () {
+    //     status = STATUS_INVALID_ALU;
+    // }
+
+    // checar acesso ao banco de registradores
+    // if (write_reg == NULL) {
+    //     status = STATUS_INVALID_REG;
+    // }
+
+    return status;
 }
 
 
@@ -1239,7 +1321,7 @@ void debugger() {
     char* regid = NULL;
     int i, j;
 
-    fprintf(f_debug, "CICLO ATUAL: %d\n\n", cycles);
+    fprintf(f_debug, "CLOCKS: %d\n\n", clocks);
     fprintf(f_debug, "*** IR ***\n");
     fprintf(f_debug, "op_code: ");
     for (i = 0; i < 6; i++) {
@@ -1288,12 +1370,6 @@ void debugger() {
 		}
 		fprintf(f_debug, "\n");
 	}
-	fprintf(f_debug, "\n");
-    fprintf(f_debug, "write_register: ");
-    for (i = 0; i < 5; i++) {
-        fprintf(f_debug, "%d", write_register[i]);
-    }
-
     fprintf(f_debug, "\n");
 
     fprintf(f_debug, "MAR: %d\n", MAR);
@@ -1351,15 +1427,9 @@ void debugger() {
     fprintf(f_debug, "\n");
     fprintf(f_debug, "*** SINAIS DE ESTADO ***\n");
 
-    fprintf(f_debug, "state: ");
+    fprintf(f_debug, "next state: ");
     for (i = 0; i < 5; i++) {
         fprintf(f_debug, "%d", state[i]);
-    }
-    fprintf(f_debug, "\n");
-
-    fprintf(f_debug, "next_state: ");
-    for (i = 0; i < 5; i++) {
-        fprintf(f_debug, "%d", next_state[i]);
     }
     fprintf(f_debug, "\n");
 
@@ -1377,8 +1447,8 @@ void debugger() {
 	}
 
     fprintf(f_debug, "\n");
-    fprintf(f_debug, "********************\n");
-    fprintf(f_debug, "********************\n");
+    fprintf(f_debug, "************************************************************\n");
+    fprintf(f_debug, "************************************************************\n");
     fprintf(f_debug, "\n");
 }
 
@@ -1415,15 +1485,17 @@ int main(int argc, char const *argv[]) {
 	// inicializar sinais de controle
 	start();
 
-    // teste com 3 ciclos (comparar com saída do PDF)
+    // teste com 3 clocks (comparar com saída do PDF)
     debugger();
-    cycle();
-    debugger();
-    cycle();
-    debugger();
-    cycle();
-    debugger();
+    // while (!(check_status())) {
+    while (i < 100) {
+        set();
+        go();
+        debugger();
+        i++;
+    }
 
+    // finalizar execução e exibir informações na tela
     finalize();
 
     // fechar arquivo de log
